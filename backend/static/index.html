@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vayuntra — Autonomous AI Cyber Defense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#020608;--bg2:#060e12;--bg3:#0a1520;--panel:#071018;--border:#0d2233;--border2:#122b40;--border3:#1a3a55;--cyan:#00d4ff;--cyan2:#00a8cc;--cyan-dim:rgba(0,212,255,0.07);--red:#ff3b5c;--red-dim:rgba(255,59,92,0.1);--orange:#ff8c42;--orange-dim:rgba(255,140,66,0.1);--yellow:#ffd166;--green:#06ffa5;--green-dim:rgba(6,255,165,0.07);--purple:#a855f7;--text:#c8dde8;--text2:#5a7f94;--text3:#2e5468;--text4:#1a3347}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.013) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.013) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.scanline{position:fixed;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent);animation:scan 10s linear infinite;z-index:9999;pointer-events:none}
+@keyframes scan{0%{top:-2px}100%{top:100vh}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:50px;background:rgba(6,14,18,0.97);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(20px)}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.logo-hex{width:30px;height:30px;background:linear-gradient(135deg,var(--cyan),#0077aa);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:bold;animation:hpulse 4s ease-in-out infinite}
+@keyframes hpulse{0%,100%{filter:drop-shadow(0 0 4px var(--cyan))}50%{filter:drop-shadow(0 0 14px var(--cyan))}}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:.1em;color:#fff}
+.logo-ver{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.2em}
+.nav{display:flex;gap:1px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px}
+.nav-item{padding:5px 13px;border-radius:4px;font-size:11px;letter-spacing:.07em;color:var(--text2);cursor:pointer;border:none;background:transparent;transition:all .15s;font-family:'DM Mono',monospace;position:relative}
+.nav-item.active{background:var(--cyan-dim);color:var(--cyan);border:1px solid rgba(0,212,255,0.18)}
+.nav-item:hover:not(.active){color:var(--text);background:rgba(255,255,255,0.025)}
+.nbadge{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--red);animation:bld 1.2s ease-in-out infinite}
+@keyframes bld{0%,100%{opacity:1}50%{opacity:.2}}
+.topbar-r{display:flex;align-items:center;gap:14px}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green);font-family:'Share Tech Mono',monospace;letter-spacing:.1em}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:bld 1.4s ease-in-out infinite}
+.clk{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2)}
+.upill{display:flex;align-items:center;gap:7px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer}
+.uav{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),#0055ff);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.ticker{background:linear-gradient(90deg,rgba(255,59,92,.14),rgba(255,59,92,.06),transparent);border-bottom:1px solid rgba(255,59,92,.2);padding:7px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:50px;z-index:190}
+.ttag{background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:2px;letter-spacing:.2em;animation:bld 1s ease-in-out infinite;white-space:nowrap}
+.tscroll{flex:1;overflow:hidden}
+.ttext{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);white-space:nowrap;animation:tmove 22s linear infinite}
+@keyframes tmove{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.tdismiss{font-size:10px;color:var(--text2);cursor:pointer;padding:2px 8px;border:1px solid var(--border);border-radius:4px;white-space:nowrap}
+.shell{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+.main{display:flex;flex:1}
+.sidebar{width:205px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:12px 0;display:flex;flex-direction:column;position:sticky;top:0;height:calc(100vh - 50px);overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border2)}
+.sbsec{padding:12px 14px 5px;font-size:9px;letter-spacing:.22em;color:var(--text4);text-transform:uppercase}
+.sbitem{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.sbitem.active{color:var(--cyan);background:var(--cyan-dim);border-left-color:var(--cyan)}
+.sbitem:hover:not(.active){color:var(--text);background:rgba(255,255,255,0.02)}
+.sbico{font-size:13px;width:15px;text-align:center;flex-shrink:0}
+.sblbl{flex:1}
+.sbbadge{background:var(--red);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-family:'Share Tech Mono',monospace}
+.sbbadge.or{background:var(--orange)}.sbbadge.gn{background:var(--green);color:#000}.sbbadge.cy{background:var(--cyan);color:#000}
+.sbdiv{height:1px;background:var(--border);margin:8px 16px}
+.content{flex:1;overflow-y:auto;overflow-x:hidden}
+.page{display:none;padding:20px;animation:fpg .25s ease}
+.page.active{display:block}
+@keyframes fpg{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ptitle{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}
+.psub{font-size:11px;color:var(--text2);margin-top:2px;letter-spacing:.05em}
+.pact{display:flex;gap:8px}
+.btn{padding:7px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.07em;transition:all .15s;border:1px solid;white-space:nowrap}
+.btnp{background:var(--cyan-dim);border-color:rgba(0,212,255,.25);color:var(--cyan)}.btnp:hover{background:rgba(0,212,255,.15);border-color:var(--cyan)}
+.btnd{background:var(--red-dim);border-color:rgba(255,59,92,.3);color:var(--red)}.btnd:hover{background:rgba(255,59,92,.2)}
+.btng{background:transparent;border-color:var(--border2);color:var(--text2)}.btng:hover{border-color:var(--border3);color:var(--text)}
+.btns{background:var(--green-dim);border-color:rgba(6,255,165,.25);color:var(--green)}
+.bsm{padding:4px 10px;font-size:10px}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
+.g84{grid-template-columns:1fr 320px}.g75{grid-template-columns:1fr 280px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.pnlhdr{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)}
+.phl{display:flex;align-items:center;gap:8px}
+.phdot{width:6px;height:6px;border-radius:50%}
+.phdot.cy{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}.phdot.rd{background:var(--red);box-shadow:0 0 6px var(--red)}.phdot.gn{background:var(--green);box-shadow:0 0 6px var(--green)}.phdot.or{background:var(--orange)}.phdot.pu{background:var(--purple)}
+.phtitle{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text)}
+.phr{font-size:10px;color:var(--cyan);cursor:pointer;letter-spacing:.08em;opacity:.7;transition:opacity .2s}.phr:hover{opacity:1}
+.pnlbdy{padding:15px}
+.scard{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:15px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+.scard:hover{border-color:var(--border3);transform:translateY(-1px)}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.scard.rd::before{background:linear-gradient(90deg,var(--red),transparent)}.scard.or::before{background:linear-gradient(90deg,var(--orange),transparent)}.scard.cy::before{background:linear-gradient(90deg,var(--cyan),transparent)}.scard.gn::before{background:linear-gradient(90deg,var(--green),transparent)}.scard.pu::before{background:linear-gradient(90deg,var(--purple),transparent)}
+.sclbl{font-size:9px;color:var(--text2);letter-spacing:.18em;text-transform:uppercase;margin-bottom:7px}
+.scval{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;line-height:1;margin-bottom:5px}
+.scard.rd .scval{color:var(--red)}.scard.or .scval{color:var(--orange)}.scard.cy .scval{color:var(--cyan)}.scard.gn .scval{color:var(--green)}.scard.pu .scval{color:var(--purple)}
+.scsub{font-size:10px;color:var(--text2)}.tup{color:var(--red)}.tdn{color:var(--green)}
+.scspark{position:absolute;bottom:10px;right:10px;display:flex;align-items:flex-end;gap:2px;height:24px;opacity:.45}
+.spb{width:4px;border-radius:2px 2px 0 0;background:currentColor}
+.sev{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:3px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:.07em;white-space:nowrap}
+.sevc{background:rgba(255,59,92,.15);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+.sevh{background:rgba(255,140,66,.15);color:var(--orange);border:1px solid rgba(255,140,66,.3)}
+.sevm{background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid rgba(255,209,102,.3)}
+.sevl{background:rgba(0,212,255,.1);color:var(--cyan2);border:1px solid rgba(0,212,255,.2)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:3px 8px;border-radius:10px;font-family:'Share Tech Mono',monospace;white-space:nowrap}
+.std{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.stact{background:rgba(255,59,92,.1);color:var(--red)}.stcnt{background:rgba(6,255,165,.08);color:var(--green)}.stinv{background:rgba(255,209,102,.1);color:var(--yellow)}.stiso{background:rgba(255,59,92,.12);color:var(--red)}.stonl{background:rgba(6,255,165,.08);color:var(--green)}.stofl{background:rgba(255,255,255,.05);color:var(--text2)}.stdeg{background:rgba(255,140,66,.1);color:var(--orange)}.strem{background:rgba(0,212,255,.08);color:var(--cyan)}
+.vtable{width:100%;border-collapse:collapse}
+.vtable th{font-size:9px;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:400}
+.vtable td{padding:10px 12px;vertical-align:middle;border-bottom:1px solid rgba(13,34,51,.5)}
+.vtr{cursor:pointer;transition:background .12s;animation:rowin .35s ease backwards}
+.vtr:hover{background:rgba(0,212,255,.025)}
+@keyframes rowin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.vtr:nth-child(1){animation-delay:.05s}.vtr:nth-child(2){animation-delay:.1s}.vtr:nth-child(3){animation-delay:.15s}.vtr:nth-child(4){animation-delay:.2s}.vtr:nth-child(5){animation-delay:.25s}.vtr:nth-child(6){animation-delay:.3s}
+.cm{font-size:12px;color:var(--text)}.cs{font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:2px}
+.mtag{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan2);background:var(--cyan-dim);padding:2px 6px;border-radius:3px;border:1px solid rgba(0,212,255,.12)}
+.swrap{min-width:80px}.snum{font-family:'Share Tech Mono',monospace;font-size:11px;margin-bottom:3px}.strk{height:3px;background:var(--border2);border-radius:2px;overflow:hidden}.sfil{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.25,.8,.25,1)}
+.feed{max-height:360px;overflow-y:auto}.feed::-webkit-scrollbar{width:3px}.feed::-webkit-scrollbar-thumb{background:var(--border2)}
+.fitem{display:flex;gap:9px;padding:9px 15px;border-bottom:1px solid rgba(13,34,51,.4);animation:fdin .3s ease backwards}
+@keyframes fdin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.fidot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.fidot.rd{background:var(--red);box-shadow:0 0 5px var(--red)}.fidot.or{background:var(--orange)}.fidot.cy{background:var(--cyan)}.fidot.gn{background:var(--green)}.fidot.pu{background:var(--purple)}
+.fitime{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap;padding-top:1px;min-width:50px}
+.fibody{flex:1}.fititle{font-size:11px;color:var(--text);margin-bottom:1px}.fidet{font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace}
+.cbars{display:flex;align-items:flex-end;gap:3px;height:90px;padding:0 4px}
+.cbw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.cb{width:100%;border-radius:3px 3px 0 0;min-height:4px;cursor:pointer;position:relative;transition:opacity .2s}.cb:hover{opacity:.75}
+.cb:hover::after{content:attr(data-v);position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text);background:var(--bg3);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;white-space:nowrap;pointer-events:none}
+.cbl{font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.acard{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:all .15s}
+.acard:hover{border-color:var(--border3)}.acard.iso{border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.03)}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.aonl{background:var(--green);animation:apg 2.5s ease-in-out infinite}.aofl{background:var(--text3)}.aiso{background:var(--red);animation:apr 1.2s ease-in-out infinite}.adeg{background:var(--orange)}
+@keyframes apg{0%,100%{box-shadow:0 0 0 0 rgba(6,255,165,.5)}50%{box-shadow:0 0 0 4px rgba(6,255,165,0)}}
+@keyframes apr{0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,.6)}50%{box-shadow:0 0 0 5px rgba(255,59,92,0)}}
+.ainf{flex:1;min-width:0}.aname{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.amet{font-size:9px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:1px}.ascr{font-family:'Share Tech Mono',monospace;font-size:10px;text-align:right}
+.term{background:#020b10;border:1px solid var(--border2);border-radius:6px;overflow:hidden}
+.termbar{display:flex;align-items:center;gap:5px;padding:7px 12px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.tdc{width:10px;height:10px;border-radius:50%}.tdc.r{background:#ff5f57}.tdc.y{background:#febc2e}.tdc.g{background:#28c840}
+.termttl{margin-left:4px;font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace}
+.termbdy{padding:13px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.75;max-height:240px;overflow-y:auto}
+.termbdy::-webkit-scrollbar{width:3px}.termbdy::-webkit-scrollbar-thumb{background:var(--border2)}
+.tp{color:var(--cyan)}.to{color:var(--text2)}.tw{color:var(--orange)}.te{color:var(--red)}.ts{color:var(--green)}.td2{color:var(--text3)}
+.cur{display:inline-block;width:7px;height:13px;background:var(--cyan);margin-left:2px;animation:curanm 1s step-end infinite;vertical-align:text-bottom}
+@keyframes curanm{0%,100%{opacity:1}50%{opacity:0}}
+.llmbox{background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.1);border-radius:6px;padding:12px 14px;margin-top:10px}
+.llmhdr{display:flex;align-items:center;gap:7px;margin-bottom:10px;font-size:10px;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase}
+.llmstep{display:flex;gap:9px;margin-bottom:7px;font-size:11px;line-height:1.5}
+.llmnum{width:18px;height:18px;background:var(--cyan-dim);border:1px solid rgba(0,212,255,.2);border-radius:3px;font-size:10px;color:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Share Tech Mono',monospace}
+.llmtxt{color:var(--text2)}.llmtxt strong{color:var(--text);font-weight:500}
+.mitwrap{padding:12px 15px}
+.mitrow{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.mittac{font-size:9px;color:var(--text2);width:130px;flex-shrink:0}
+.mitcells{display:flex;gap:2px;flex:1}
+.mc{flex:1;height:17px;border-radius:2px;cursor:pointer;transition:transform .1s,filter .1s;position:relative}
+.mc:hover{transform:scale(1.12);filter:brightness(1.3);z-index:2}
+.mc.l0{background:var(--border)}.mc.l1{background:rgba(0,212,255,.22)}.mc.l2{background:rgba(255,140,66,.35)}.mc.l3{background:rgba(255,59,92,.5)}.mc.l4{background:var(--red)}
+.mc:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);font-size:9px;color:#fff;background:var(--bg3);padding:2px 6px;border-radius:3px;border:1px solid var(--border2);font-family:'Share Tech Mono',monospace;white-space:nowrap;pointer-events:none;z-index:100}
+.mitleg{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.mli{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text2)}
+.mlb{width:10px;height:10px;border-radius:2px}
+.netcanvas{position:relative;height:320px;background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,.04) 0%,transparent 70%);overflow:hidden}
+.netnode{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transform:translate(-50%,-50%)}
+.netnode:hover{z-index:10}
+.netcirc{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:1px solid;transition:transform .2s}
+.netnode:hover .netcirc{transform:scale(1.2)}
+.netlbl{font-size:9px;color:var(--text2);text-align:center;font-family:'Share Tech Mono',monospace;max-width:70px;line-height:1.2}
+.nsafe .netcirc{background:rgba(6,255,165,.07);border-color:rgba(6,255,165,.3)}
+.nwarn .netcirc{background:rgba(255,140,66,.1);border-color:rgba(255,140,66,.4)}
+.nthr .netcirc{background:rgba(255,59,92,.12);border-color:rgba(255,59,92,.5);animation:thrpulse 1.5s ease-in-out infinite}
+.nedge .netcirc{background:rgba(0,212,255,.07);border-color:rgba(0,212,255,.3)}
+.ncore .netcirc{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.4);width:48px;height:48px;font-size:20px}
+@keyframes thrpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,.5)}50%{box-shadow:0 0 0 12px rgba(255,59,92,0)}}
+.netsvg{position:absolute;inset:0;pointer-events:none}
+.bmeter{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(13,34,51,.5)}
+.bmlbl{font-size:11px;color:var(--text2);width:160px;flex-shrink:0}
+.bmbw{flex:1;height:6px;background:var(--border2);border-radius:3px;overflow:hidden}
+.bmfil{height:100%;border-radius:3px;transition:width 1.5s cubic-bezier(.25,.8,.25,1)}
+.bmval{font-family:'Share Tech Mono',monospace;font-size:10px;min-width:40px;text-align:right}
+.dover{display:none;position:fixed;inset:0;background:rgba(2,6,8,.75);z-index:300;backdrop-filter:blur(4px)}
+.dover.open{display:flex;justify-content:flex-end}
+.dpanel{width:500px;height:100vh;background:var(--panel);border-left:1px solid var(--border2);overflow-y:auto;animation:sldin .3s ease}
+@keyframes sldin{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.dpanel::-webkit-scrollbar{width:4px}.dpanel::-webkit-scrollbar-thumb{background:var(--border2)}
+.dphdr{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.3);display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;z-index:10}
+.dptit{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+.dpsub{font-size:11px;color:var(--text2);font-family:'Share Tech Mono',monospace}
+.dpclose{background:none;border:1px solid var(--border2);color:var(--text2);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}.dpclose:hover{border-color:var(--border3);color:var(--text)}
+.dpbody{padding:16px 20px}
+.dpsec{margin-bottom:18px}.dpsectit{font-size:10px;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.dpkv{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(13,34,51,.4)}
+.dpkey{font-size:11px;color:var(--text2)}.dpval{font-size:11px;color:var(--text);font-family:'Share Tech Mono',monospace;text-align:right}
+.dpact{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.alog{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(13,34,51,.4);font-size:11px}
+.alt{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);min-width:80px;flex-shrink:0}
+.alac{color:var(--cyan2);min-width:80px;flex-shrink:0;font-family:'Share Tech Mono',monospace;font-size:10px}
+.alan{color:var(--text);flex:1}.alrs{color:var(--text2);font-family:'Share Tech Mono',monospace;font-size:10px}
+.alout{font-size:10px;padding:1px 7px;border-radius:8px;font-family:'Share Tech Mono',monospace;flex-shrink:0}
+.alos{background:rgba(6,255,165,.07);color:var(--green)}.alow{background:rgba(255,140,66,.1);color:var(--orange)}.alod{background:rgba(255,59,92,.1);color:var(--red)}
+.srrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(13,34,51,.4)}
+.srlbl{font-size:12px;color:var(--text);margin-bottom:2px}.srdsc{font-size:10px;color:var(--text2)}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}.toggle input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--border2);border-radius:11px;cursor:pointer;transition:.2s}.tslider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:.2s}
+.toggle input:checked+.tslider{background:rgba(0,212,255,.3);border:1px solid rgba(0,212,255,.4)}.toggle input:checked+.tslider::before{transform:translateX(18px);background:var(--cyan)}
+.ccard{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .2s}
+.ccard:hover{border-color:var(--border3)}
+.cctop{display:flex;align-items:center;justify-content:space-between}
+.ccname{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff}
+.ccpct{font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:bold}
+.ccbw{height:5px;background:var(--border2);border-radius:3px;overflow:hidden}.ccb{height:100%;border-radius:3px}
+.ccst{font-size:10px;color:var(--text2)}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@media(max-width:1100px){.g4{grid-template-columns:1fr 1fr}.g84,.g75{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="ticker" id="tkr">
+  <div class="ttag">CRITICAL</div>
+  <div class="tscroll"><div class="ttext">AUTONOMOUS CONTAINMENT TRIGGERED — WORKSTATION-047 ISOLATED — Ransomware pre-detonation score 0.943 — LATERAL MOVEMENT: SRV-DB-02 to SRV-AD-01 via SMB — C2 BEACON: WORKSTATION-023 outbound 127s interval — All analysts review dashboard</div></div>
+  <div class="tdismiss" onclick="document.getElementById('tkr').style.display='none'">Dismiss</div>
+</div>
+<div class="shell">
+<div class="topbar">
+  <div class="logo" onclick="nav('dashboard')">
+    <div class="logo-hex">V</div>
+    <div><div class="logo-text">VAYUNTRA</div><div class="logo-ver">// AUTONOMOUS AI CYBER DEFENSE</div></div>
+  </div>
+  <div class="nav">
+    <button class="nav-item active" onclick="nav('dashboard')">Dashboard</button>
+    <button class="nav-item" onclick="nav('threats')" style="position:relative">Threats<span class="nbadge"></span></button>
+    <button class="nav-item" onclick="nav('agents')">Agents</button>
+    <button class="nav-item" onclick="nav('behavioral')">Behavioral</button>
+    <button class="nav-item" onclick="nav('remediation')">AI Remediation</button>
+    <button class="nav-item" onclick="nav('network')">Network Map</button>
+    <button class="nav-item" onclick="nav('compliance')">Compliance</button>
+    <button class="nav-item" onclick="nav('audit')">Audit</button>
+    <button class="nav-item" onclick="nav('settings')">Settings</button>
+  </div>
+  <div class="topbar-r">
+    <div class="live-pill"><div class="ldot"></div>LIVE</div>
+    <div class="clk" id="clkEl">--:--:--</div>
+    <div class="upill"><div class="uav">SA</div>SOC Analyst</div>
+  </div>
+</div>
+<div class="main">
+<div class="sidebar">
+  <div class="sbsec">Operations</div>
+  <div class="sbitem active" onclick="nav('dashboard')"><span class="sbico">◈</span><span class="sblbl">Overview</span></div>
+  <div class="sbitem" onclick="nav('threats')"><span class="sbico">⚡</span><span class="sblbl">Live Threats</span><span class="sbbadge">3</span></div>
+  <div class="sbitem" onclick="nav('agents')"><span class="sbico">▣</span><span class="sblbl">Agents</span><span class="sbbadge gn">24</span></div>
+  <div class="sbitem" onclick="nav('network')"><span class="sbico">⌬</span><span class="sblbl">Network Map</span></div>
+  <div class="sbdiv"></div>
+  <div class="sbsec">Intelligence</div>
+  <div class="sbitem" onclick="nav('behavioral')"><span class="sbico">⊡</span><span class="sblbl">Behavioral Memory</span></div>
+  <div class="sbitem" onclick="nav('remediation')"><span class="sbico">⬡</span><span class="sblbl">AI Remediation</span></div>
+  <div class="sbitem" onclick="nav('compliance')"><span class="sbico">◎</span><span class="sblbl">Compliance</span></div>
+  <div class="sbdiv"></div>
+  <div class="sbsec">System</div>
+  <div class="sbitem" onclick="nav('audit')"><span class="sbico">≡</span><span class="sblbl">Audit Log</span></div>
+  <div class="sbitem" onclick="nav('settings')"><span class="sbico">◇</span><span class="sblbl">Settings</span></div>
+</div>
+<div class="content">
+
+<!-- ===== DASHBOARD ===== -->
+<div class="page active" id="page-dashboard">
+  <div class="ph">
+    <div><div class="ptitle">◈ Security Operations Center</div><div class="psub">Real-time autonomous threat intelligence — Vayuntra AI Defense Platform</div></div>
+    <div class="pact"><button class="btn btng bsm">Export Report</button><button class="btn btnp bsm">+ Deploy Agent</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard rd"><div class="sclbl">Active Threats</div><div class="scval" id="dth">3</div><div class="scsub"><span class="tup">+2</span> in last hour</div><div class="scspark" style="color:var(--red)"><div class="spb" style="height:35%"></div><div class="spb" style="height:55%"></div><div class="spb" style="height:30%"></div><div class="spb" style="height:75%"></div><div class="spb" style="height:100%"></div></div></div>
+    <div class="scard or"><div class="sclbl">Anomalies / 24h</div><div class="scval" id="dan">47</div><div class="scsub">Last: <span style="color:var(--orange)">34s ago</span></div><div class="scspark" style="color:var(--orange)"><div class="spb" style="height:45%"></div><div class="spb" style="height:65%"></div><div class="spb" style="height:40%"></div><div class="spb" style="height:85%"></div><div class="spb" style="height:60%"></div></div></div>
+    <div class="scard gn"><div class="sclbl">Auto-Remediated</div><div class="scval">31</div><div class="scsub"><span class="tdn">87%</span> auto-resolve rate</div><div class="scspark" style="color:var(--green)"><div class="spb" style="height:30%"></div><div class="spb" style="height:50%"></div><div class="spb" style="height:70%"></div><div class="spb" style="height:85%"></div><div class="spb" style="height:100%"></div></div></div>
+    <div class="scard cy"><div class="sclbl">Agents Online</div><div class="scval">24<span style="font-size:17px;color:var(--text2)">/26</span></div><div class="scsub">1 isolated · 1 offline</div><div class="scspark" style="color:var(--cyan)"><div class="spb" style="height:80%"></div><div class="spb" style="height:85%"></div><div class="spb" style="height:90%"></div><div class="spb" style="height:88%"></div><div class="spb" style="height:92%"></div></div></div>
+  </div>
+  <div class="grid g84" style="margin-bottom:14px">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot rd"></div><div class="phtitle">Active Threats</div></div><div class="phr" onclick="nav('threats')">View all →</div></div>
+      <table class="vtable"><thead><tr><th>Sev</th><th>Threat / Host</th><th>MITRE</th><th>Score</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        <tr class="vtr" onclick="od('thr-rw')"><td><span class="sev sevc">● CRITICAL</span></td><td><div class="cm">Ransomware Pre-Detonation</div><div class="cs">WORKSTATION-047 · Win11</div></td><td><span class="mtag">T1486</span></td><td><div class="swrap"><div class="snum" style="color:var(--red)">0.943</div><div class="strk"><div class="sfil" style="width:94%;background:var(--red)"></div></div></div></td><td><span class="st stiso"><span class="std"></span>Isolated</span></td><td><button class="btn btnp bsm" onclick="event.stopPropagation();od('thr-rw')">Investigate</button></td></tr>
+        <tr class="vtr" onclick="od('thr-lat')"><td><span class="sev sevh">● HIGH</span></td><td><div class="cm">Lateral Movement</div><div class="cs">SRV-DB-02 → SRV-AD-01</div></td><td><span class="mtag">T1021</span></td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.812</div><div class="strk"><div class="sfil" style="width:81%;background:var(--orange)"></div></div></div></td><td><span class="st stact"><span class="std"></span>Active</span></td><td><button class="btn btnd bsm" onclick="event.stopPropagation();isoAction('SRV-DB-02')">Isolate</button></td></tr>
+        <tr class="vtr" onclick="od('thr-c2')"><td><span class="sev sevh">● HIGH</span></td><td><div class="cm">C2 Beacon Pattern</div><div class="cs">WORKSTATION-023 · macOS</div></td><td><span class="mtag">T1071</span></td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.779</div><div class="strk"><div class="sfil" style="width:78%;background:var(--orange)"></div></div></div></td><td><span class="st stinv"><span class="std"></span>Investigating</span></td><td><button class="btn btng bsm" onclick="event.stopPropagation();nav('remediation')">Playbook</button></td></tr>
+        <tr class="vtr" onclick="od('thr-cr')"><td><span class="sev sevm">● MEDIUM</span></td><td><div class="cm">Credential Dumping</div><div class="cs">WORKSTATION-011 · Win10</div></td><td><span class="mtag">T1003</span></td><td><div class="swrap"><div class="snum" style="color:var(--yellow)">0.641</div><div class="strk"><div class="sfil" style="width:64%;background:var(--yellow)"></div></div></div></td><td><span class="st stcnt"><span class="std"></span>Contained</span></td><td><button class="btn btng bsm">Review</button></td></tr>
+        <tr class="vtr" onclick="od('thr-dns')"><td><span class="sev sevl">● LOW</span></td><td><div class="cm">DNS Tunneling</div><div class="cs">EDGE-NODE-03 · RPi</div></td><td><span class="mtag">T1568</span></td><td><div class="swrap"><div class="snum" style="color:var(--cyan)">0.523</div><div class="strk"><div class="sfil" style="width:52%;background:var(--cyan)"></div></div></div></td><td><span class="st stinv"><span class="std"></span>Monitoring</span></td><td><button class="btn btng bsm">Details</button></td></tr>
+      </tbody></table>
+    </div>
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Live Event Feed</div></div><div class="live-pill" style="font-size:9px"><div class="ldot"></div>STREAMING</div></div>
+      <div class="feed" id="dfeed">
+        <div class="fitem"><div class="fidot rd"></div><div class="fitime">14:32:07</div><div class="fibody"><div class="fititle">Autonomous isolation triggered</div><div class="fidet">WORKSTATION-047 · Score 0.943</div></div></div>
+        <div class="fitem"><div class="fidot or"></div><div class="fitime">14:31:55</div><div class="fibody"><div class="fititle">High entropy file write rate</div><div class="fidet">2,847 writes/min · T1486</div></div></div>
+        <div class="fitem"><div class="fidot or"></div><div class="fitime">14:31:41</div><div class="fibody"><div class="fititle">Lateral movement blocked</div><div class="fidet">SRV-DB-02 → SRV-AD-01 SMB</div></div></div>
+        <div class="fitem"><div class="fidot cy"></div><div class="fitime">14:31:22</div><div class="fibody"><div class="fititle">LLM playbook generated</div><div class="fidet">T1071 · 6 steps · 4.2s inference</div></div></div>
+        <div class="fitem"><div class="fidot gn"></div><div class="fitime">14:30:58</div><div class="fibody"><div class="fititle">Auto-remediation complete</div><div class="fidet">WORKSTATION-011 · T1003 resolved</div></div></div>
+        <div class="fitem"><div class="fidot cy"></div><div class="fitime">14:30:44</div><div class="fibody"><div class="fititle">New agent registered</div><div class="fidet">EDGE-NODE-04 · RPi4 · armv7</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot or"></div><div class="phtitle">Anomaly Trend (24h)</div></div></div>
+      <div style="padding:14px"><div class="cbars" id="dchart"></div></div>
+      <div style="border-top:1px solid var(--border)">
+        <div class="pnlhdr" style="border:none"><div class="phl"><div class="phdot cy"></div><div class="phtitle">MITRE ATT&amp;CK Heatmap</div></div><div class="phr" onclick="nav('compliance')">Full map →</div></div>
+        <div class="mitwrap">
+          <div class="mitrow"><div class="mittac">Initial Access</div><div class="mitcells"><div class="mc l2" data-t="T1190"></div><div class="mc l1" data-t="T1133"></div><div class="mc l3" data-t="T1566"></div><div class="mc l0"></div><div class="mc l1" data-t="T1078"></div><div class="mc l2" data-t="T1195"></div></div></div>
+          <div class="mitrow"><div class="mittac">Execution</div><div class="mitcells"><div class="mc l3" data-t="T1059"></div><div class="mc l2" data-t="T1106"></div><div class="mc l1"></div><div class="mc l4" data-t="T1204"></div><div class="mc l2"></div><div class="mc l1"></div></div></div>
+          <div class="mitrow"><div class="mittac">Lateral Movement</div><div class="mitcells"><div class="mc l4" data-t="T1021"></div><div class="mc l3" data-t="T1075"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l3"></div></div></div>
+          <div class="mitrow"><div class="mittac">C&amp;C</div><div class="mitcells"><div class="mc l3" data-t="T1071"></div><div class="mc l2"></div><div class="mc l3" data-t="T1090"></div><div class="mc l1"></div><div class="mc l2"></div><div class="mc l0"></div></div></div>
+          <div class="mitrow" style="margin:0"><div class="mittac">Impact</div><div class="mitcells"><div class="mc l4" data-t="T1486"></div><div class="mc l3" data-t="T1490"></div><div class="mc l0"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div></div></div>
+          <div class="mitleg"><div class="mli"><div class="mlb" style="background:var(--border)"></div>None</div><div class="mli"><div class="mlb" style="background:rgba(0,212,255,.22)"></div>Low</div><div class="mli"><div class="mlb" style="background:rgba(255,140,66,.35)"></div>Medium</div><div class="mli"><div class="mlb" style="background:rgba(255,59,92,.5)"></div>High</div><div class="mli"><div class="mlb" style="background:var(--red)"></div>Critical</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="pnlhdr"><div class="phl"><div class="phdot gn"></div><div class="phtitle">Agent Status</div></div><div class="phr" onclick="nav('agents')">Manage →</div></div>
+        <div class="agrid">
+          <div class="acard iso" onclick="od('ag-047')"><div class="adot aiso"></div><div class="ainf"><div class="aname">WORKSTATION-047</div><div class="amet">Win11 · ISOLATED</div></div><div class="ascr" style="color:var(--red)">0.943</div></div>
+          <div class="acard" onclick="od('ag-db')"><div class="adot aonl"></div><div class="ainf"><div class="aname">SRV-DB-02</div><div class="amet">Linux · Online</div></div><div class="ascr" style="color:var(--orange)">0.812</div></div>
+          <div class="acard" onclick="od('ag-023')"><div class="adot aonl"></div><div class="ainf"><div class="aname">WORKSTATION-023</div><div class="amet">macOS M2 · Online</div></div><div class="ascr" style="color:var(--orange)">0.779</div></div>
+          <div class="acard" onclick="od('ag-edge')"><div class="adot adeg"></div><div class="ainf"><div class="aname">EDGE-NODE-03</div><div class="amet">RPi4 · Degraded</div></div><div class="ascr" style="color:var(--yellow)">0.523</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pnlhdr"><div class="phl"><div class="phdot pu"></div><div class="phtitle">ML Detection Models</div></div></div>
+        <div class="pnlbdy">
+          <div class="bmeter"><div class="bmlbl">Isolation Forest</div><div class="bmbw"><div class="bmfil" style="width:94%;background:var(--cyan)"></div></div><div class="bmval" style="color:var(--cyan)">94%</div></div>
+          <div class="bmeter"><div class="bmlbl">One-Class SVM</div><div class="bmbw"><div class="bmfil" style="width:89%;background:var(--green)"></div></div><div class="bmval" style="color:var(--green)">89%</div></div>
+          <div class="bmeter"><div class="bmlbl">LSTM Sequence</div><div class="bmbw"><div class="bmfil" style="width:82%;background:var(--purple)"></div></div><div class="bmval" style="color:var(--purple)">82%</div></div>
+          <div class="bmeter" style="border:none"><div class="bmlbl">Ensemble Score</div><div class="bmbw"><div class="bmfil" style="width:91%;background:linear-gradient(90deg,var(--cyan),var(--green))"></div></div><div class="bmval" style="color:var(--green)">91%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== THREATS ===== -->
+<div class="page" id="page-threats">
+  <div class="ph">
+    <div><div class="ptitle">⚡ Threat Management</div><div class="psub">All detected threats — filter, investigate, and remediate</div></div>
+    <div class="pact"><button class="btn btng bsm">Filter</button><button class="btn btnd bsm">Isolate All Active</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard rd"><div class="sclbl">Critical</div><div class="scval">1</div><div class="scsub">Immediate action needed</div></div>
+    <div class="scard or"><div class="sclbl">High</div><div class="scval">2</div><div class="scsub">Under investigation</div></div>
+    <div class="scard" style="border-color:var(--border)"><div class="sclbl" style="color:var(--yellow)">Medium</div><div class="scval" style="color:var(--yellow)">4</div><div class="scsub">Contained</div></div>
+    <div class="scard cy"><div class="sclbl">Total 7 days</div><div class="scval">127</div><div class="scsub tdn">-12% from last week</div></div>
+  </div>
+  <div class="panel">
+    <div class="pnlhdr"><div class="phl"><div class="phdot rd"></div><div class="phtitle">All Threats</div></div></div>
+    <table class="vtable"><thead><tr><th>ID</th><th>Sev</th><th>Type</th><th>Host</th><th>MITRE</th><th>Model</th><th>Score</th><th>Detected</th><th>Status</th><th>Action</th></tr></thead><tbody>
+      <tr class="vtr" onclick="od('thr-rw')"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0091</td><td><span class="sev sevc">● CRITICAL</span></td><td><div class="cm">Ransomware Pre-Detonation</div></td><td><div class="cs">WORKSTATION-047</div></td><td><span class="mtag">T1486</span></td><td style="font-size:10px;color:var(--text2)">Ensemble</td><td><div class="swrap"><div class="snum" style="color:var(--red)">0.943</div><div class="strk"><div class="sfil" style="width:94%;background:var(--red)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">14:32:07</td><td><span class="st stiso"><span class="std"></span>Isolated</span></td><td><button class="btn btnp bsm" onclick="event.stopPropagation();od('thr-rw')">Investigate</button></td></tr>
+      <tr class="vtr" onclick="od('thr-lat')"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0090</td><td><span class="sev sevh">● HIGH</span></td><td><div class="cm">Lateral Movement</div></td><td><div class="cs">SRV-DB-02</div></td><td><span class="mtag">T1021</span></td><td style="font-size:10px;color:var(--text2)">LSTM</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.812</div><div class="strk"><div class="sfil" style="width:81%;background:var(--orange)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">14:31:41</td><td><span class="st stact"><span class="std"></span>Active</span></td><td><button class="btn btnd bsm" onclick="event.stopPropagation();isoAction('SRV-DB-02')">Isolate</button></td></tr>
+      <tr class="vtr" onclick="od('thr-c2')"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0089</td><td><span class="sev sevh">● HIGH</span></td><td><div class="cm">C2 Beacon Pattern</div></td><td><div class="cs">WORKSTATION-023</div></td><td><span class="mtag">T1071</span></td><td style="font-size:10px;color:var(--text2)">LSTM</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.779</div><div class="strk"><div class="sfil" style="width:78%;background:var(--orange)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">14:31:22</td><td><span class="st stinv"><span class="std"></span>Investigating</span></td><td><button class="btn btng bsm" onclick="event.stopPropagation();nav('remediation')">AI Playbook</button></td></tr>
+      <tr class="vtr" onclick="od('thr-cr')"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0088</td><td><span class="sev sevm">● MEDIUM</span></td><td><div class="cm">Credential Dumping</div></td><td><div class="cs">WORKSTATION-011</div></td><td><span class="mtag">T1003</span></td><td style="font-size:10px;color:var(--text2)">SVM</td><td><div class="swrap"><div class="snum" style="color:var(--yellow)">0.641</div><div class="strk"><div class="sfil" style="width:64%;background:var(--yellow)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">14:30:11</td><td><span class="st stcnt"><span class="std"></span>Contained</span></td><td><button class="btn btng bsm">Closed</button></td></tr>
+      <tr class="vtr" onclick="od('thr-dns')"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0087</td><td><span class="sev sevl">● LOW</span></td><td><div class="cm">DNS Tunneling</div></td><td><div class="cs">EDGE-NODE-03</div></td><td><span class="mtag">T1568</span></td><td style="font-size:10px;color:var(--text2)">Iso.Forest</td><td><div class="swrap"><div class="snum" style="color:var(--cyan)">0.523</div><div class="strk"><div class="sfil" style="width:52%;background:var(--cyan)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">14:28:33</td><td><span class="st stinv"><span class="std"></span>Monitoring</span></td><td><button class="btn btng bsm">Details</button></td></tr>
+      <tr class="vtr"><td style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px">THR-0086</td><td><span class="sev sevm">● MEDIUM</span></td><td><div class="cm">Privilege Escalation</div></td><td><div class="cs">SRV-AD-01</div></td><td><span class="mtag">T1068</span></td><td style="font-size:10px;color:var(--text2)">SVM</td><td><div class="swrap"><div class="snum" style="color:var(--yellow)">0.698</div><div class="strk"><div class="sfil" style="width:70%;background:var(--yellow)"></div></div></div></td><td style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace">13:54:20</td><td><span class="st strem"><span class="std"></span>Remediated</span></td><td><button class="btn btng bsm">Review</button></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ===== AGENTS ===== -->
+<div class="page" id="page-agents">
+  <div class="ph">
+    <div><div class="ptitle">▣ Endpoint Agents</div><div class="psub">All deployed agents — Windows, Linux, macOS, Edge, Mobile</div></div>
+    <div class="pact"><button class="btn btnp bsm">+ Deploy Agent</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard gn"><div class="sclbl">Online</div><div class="scval">24</div><div class="scsub">Transmitting normally</div></div>
+    <div class="scard rd"><div class="sclbl">Isolated</div><div class="scval">1</div><div class="scsub">WORKSTATION-047</div></div>
+    <div class="scard or"><div class="sclbl">Degraded</div><div class="scval">1</div><div class="scsub">Reduced telemetry</div></div>
+    <div class="scard cy"><div class="sclbl">Total Managed</div><div class="scval">26</div><div class="scsub">Across 4 OS types</div></div>
+  </div>
+  <div class="panel">
+    <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">All Agents</div></div></div>
+    <table class="vtable"><thead><tr><th>Hostname</th><th>OS / Platform</th><th>Type</th><th>Version</th><th>Last Seen</th><th>Risk Score</th><th>Isolation</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      <tr class="vtr" onclick="od('ag-047')"><td><div class="cm">WORKSTATION-047</div><div class="cs">192.168.1.47</div></td><td><div class="cm">Windows 11 Pro</div><div class="cs">x86_64</div></td><td style="font-size:11px;color:var(--text2)">Workstation</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:07</td><td><div class="swrap"><div class="snum" style="color:var(--red)">94</div><div class="strk"><div class="sfil" style="width:94%;background:var(--red)"></div></div></div></td><td><span class="st stiso"><span class="std"></span>Network Isolated</span></td><td><span class="st stiso"><span class="std"></span>Isolated</span></td><td><button class="btn btns bsm" onclick="event.stopPropagation();relIso()">Release</button></td></tr>
+      <tr class="vtr" onclick="od('ag-db')"><td><div class="cm">SRV-DB-02</div><div class="cs">10.0.1.12</div></td><td><div class="cm">Ubuntu 22.04 LTS</div><div class="cs">x86_64</div></td><td style="font-size:11px;color:var(--text2)">Server</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:01</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">81</div><div class="strk"><div class="sfil" style="width:81%;background:var(--orange)"></div></div></div></td><td><span class="st stcnt"><span class="std"></span>None</span></td><td><span class="st stact"><span class="std"></span>Active Threat</span></td><td><button class="btn btnd bsm" onclick="event.stopPropagation();isoAction('SRV-DB-02')">Isolate</button></td></tr>
+      <tr class="vtr" onclick="od('ag-023')"><td><div class="cm">WORKSTATION-023</div><div class="cs">192.168.1.23</div></td><td><div class="cm">macOS Sonoma 14.4</div><div class="cs">arm64 (M2)</div></td><td style="font-size:11px;color:var(--text2)">Workstation</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:58</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">78</div><div class="strk"><div class="sfil" style="width:78%;background:var(--orange)"></div></div></div></td><td><span class="st stcnt"><span class="std"></span>None</span></td><td><span class="st stinv"><span class="std"></span>Investigating</span></td><td><button class="btn btnp bsm" onclick="event.stopPropagation();od('ag-023')">Inspect</button></td></tr>
+      <tr class="vtr" onclick="od('ag-edge')"><td><div class="cm">EDGE-NODE-03</div><div class="cs">10.0.5.3</div></td><td><div class="cm">Raspberry Pi OS</div><div class="cs">armv7</div></td><td style="font-size:11px;color:var(--text2)">Edge Gateway</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:29:15</td><td><div class="swrap"><div class="snum" style="color:var(--yellow)">52</div><div class="strk"><div class="sfil" style="width:52%;background:var(--yellow)"></div></div></div></td><td><span class="st stcnt"><span class="std"></span>None</span></td><td><span class="st stdeg"><span class="std"></span>Degraded</span></td><td><button class="btn btng bsm">Diagnose</button></td></tr>
+      <tr class="vtr"><td><div class="cm">SRV-AD-01</div><div class="cs">10.0.1.5</div></td><td><div class="cm">Windows Server 2022</div><div class="cs">x86_64</div></td><td style="font-size:11px;color:var(--text2)">Domain Controller</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:04</td><td><div class="swrap"><div class="snum" style="color:var(--green)">18</div><div class="strk"><div class="sfil" style="width:18%;background:var(--green)"></div></div></div></td><td><span class="st stcnt"><span class="std"></span>None</span></td><td><span class="st stonl"><span class="std"></span>Online</span></td><td><button class="btn btng bsm">Details</button></td></tr>
+      <tr class="vtr"><td><div class="cm">MAC-MINI-SOC</div><div class="cs">10.0.0.5</div></td><td><div class="cm">macOS Ventura 13.6</div><div class="cs">arm64 (M1)</div></td><td style="font-size:11px;color:var(--text2)">SOC Gateway</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">v0.1.0</td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">11:14:22</td><td><div class="swrap"><div class="snum" style="color:var(--text2)">—</div></div></td><td><span class="st stcnt"><span class="std"></span>None</span></td><td><span class="st stofl"><span class="std"></span>Offline</span></td><td><button class="btn btng bsm">Ping</button></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ===== BEHAVIORAL ===== -->
+<div class="page" id="page-behavioral">
+  <div class="ph">
+    <div><div class="ptitle">⊡ Behavioral Memory</div><div class="psub">Persistent ML-powered behavioral baselines — 90-day rolling memory per agent</div></div>
+    <div class="pact"><button class="btn btng bsm">Retrain Models</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard cy"><div class="sclbl">Profiles Active</div><div class="scval">26</div><div class="scsub">Baseline established</div></div>
+    <div class="scard gn"><div class="sclbl">Avg Accuracy</div><div class="scval">91%</div><div class="scsub">Across all models</div></div>
+    <div class="scard or"><div class="sclbl">Drift Detected</div><div class="scval">3</div><div class="scsub">Behavioral shifts flagged</div></div>
+    <div class="scard pu"><div class="sclbl">Memory Window</div><div class="scval">90d</div><div class="scsub">Rolling baseline</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Agent Behavioral Profiles</div></div></div>
+      <table class="vtable"><thead><tr><th>Agent</th><th>Baseline Age</th><th>Drift Score</th><th>Last Update</th><th>Status</th></tr></thead><tbody>
+        <tr class="vtr"><td><div class="cm">WORKSTATION-047</div><div class="cs">Win11 · x86_64</div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">62 days</td><td><div class="swrap"><div class="snum" style="color:var(--red)">0.89</div><div class="strk"><div class="sfil" style="width:89%;background:var(--red)"></div></div></div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:07</td><td><span class="sev sevc">CRITICAL DRIFT</span></td></tr>
+        <tr class="vtr"><td><div class="cm">SRV-DB-02</div><div class="cs">Ubuntu 22.04</div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">45 days</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.52</div><div class="strk"><div class="sfil" style="width:52%;background:var(--orange)"></div></div></div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:41</td><td><span class="sev sevh">HIGH DRIFT</span></td></tr>
+        <tr class="vtr"><td><div class="cm">WORKSTATION-023</div><div class="cs">macOS M2</div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">78 days</td><td><div class="swrap"><div class="snum" style="color:var(--orange)">0.41</div><div class="strk"><div class="sfil" style="width:41%;background:var(--orange)"></div></div></div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:22</td><td><span class="sev sevh">MOD DRIFT</span></td></tr>
+        <tr class="vtr"><td><div class="cm">SRV-AD-01</div><div class="cs">Win Server 2022</div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">90 days</td><td><div class="swrap"><div class="snum" style="color:var(--green)">0.08</div><div class="strk"><div class="sfil" style="width:8%;background:var(--green)"></div></div></div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:04</td><td><span class="sev sevl">STABLE</span></td></tr>
+        <tr class="vtr"><td><div class="cm">EDGE-NODE-03</div><div class="cs">Raspberry Pi OS</div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">31 days</td><td><div class="swrap"><div class="snum" style="color:var(--yellow)">0.27</div><div class="strk"><div class="sfil" style="width:27%;background:var(--yellow)"></div></div></div></td><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:29:15</td><td><span class="sev sevm">LOW DRIFT</span></td></tr>
+      </tbody></table>
+    </div>
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot pu"></div><div class="phtitle">Behavioral Metrics — WORKSTATION-047</div></div></div>
+      <div class="pnlbdy">
+        <div class="bmeter"><div class="bmlbl">Process spawn rate</div><div class="bmbw"><div class="bmfil" style="width:95%;background:var(--red)"></div></div><div class="bmval" style="color:var(--red)">95%</div></div>
+        <div class="bmeter"><div class="bmlbl">Network call frequency</div><div class="bmbw"><div class="bmfil" style="width:88%;background:var(--orange)"></div></div><div class="bmval" style="color:var(--orange)">88%</div></div>
+        <div class="bmeter"><div class="bmlbl">File entropy (writes)</div><div class="bmbw"><div class="bmfil" style="width:99%;background:var(--red)"></div></div><div class="bmval" style="color:var(--red)">99%</div></div>
+        <div class="bmeter"><div class="bmlbl">Shadow copy deletion</div><div class="bmbw"><div class="bmfil" style="width:100%;background:var(--red)"></div></div><div class="bmval" style="color:var(--red)">100%</div></div>
+        <div class="bmeter"><div class="bmlbl">API call volume</div><div class="bmbw"><div class="bmfil" style="width:61%;background:var(--purple)"></div></div><div class="bmval" style="color:var(--purple)">61%</div></div>
+        <div class="bmeter" style="border:none"><div class="bmlbl">User login cadence</div><div class="bmbw"><div class="bmfil" style="width:45%;background:var(--cyan)"></div></div><div class="bmval" style="color:var(--cyan)">45%</div></div>
+      </div>
+      <div class="pnlhdr" style="border-top:1px solid var(--border)"><div class="phl"><div class="phdot rd"></div><div class="phtitle">Terminal — Live Process Monitor</div></div></div>
+      <div class="term" style="margin:12px;border-radius:6px">
+        <div class="termbar"><div class="tdc r"></div><div class="tdc y"></div><div class="tdc g"></div><span class="termttl">vayuntra-agent@WORKSTATION-047 ~ process-watch</span></div>
+        <div class="termbdy">
+          <div><span class="tp">agent@WS-047</span><span class="to">:~$ </span><span class="ts">process-watch --pid 4821 --entropy</span></div>
+          <div><span class="tw">[WARN]</span><span class="to"> PID 4821 (svchost.exe) — entropy: </span><span class="te">8.91 bits/byte</span></div>
+          <div><span class="tw">[WARN]</span><span class="to"> File writes: </span><span class="te">2,847/min</span><span class="to"> — baseline: 12/min</span></div>
+          <div><span class="te">[CRIT]</span><span class="to"> VSS deletion attempt detected — </span><span class="te">BLOCKED</span></div>
+          <div><span class="te">[CRIT]</span><span class="to"> Ransomware pattern score: </span><span class="te">0.943</span></div>
+          <div><span class="ts">[AUTO]</span><span class="to"> Network isolation applied at </span><span class="ts">14:32:09.441</span></div>
+          <div><span class="tp">agent@WS-047</span><span class="to">:~$ </span><span class="cur"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REMEDIATION ===== -->
+<div class="page" id="page-remediation">
+  <div class="ph">
+    <div><div class="ptitle">⬡ AI Remediation Engine</div><div class="psub">LLM-powered autonomous playbooks — real-time response generation</div></div>
+    <div class="pact"><button class="btn btng bsm">View All Playbooks</button><button class="btn btnp bsm">Generate Playbook</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard gn"><div class="sclbl">Auto-Resolved</div><div class="scval">31</div><div class="scsub">No human required</div></div>
+    <div class="scard cy"><div class="sclbl">Playbooks Today</div><div class="scval">8</div><div class="scsub">Avg 3.8s generation</div></div>
+    <div class="scard or"><div class="sclbl">Pending Review</div><div class="scval">2</div><div class="scsub">Analyst approval needed</div></div>
+    <div class="scard pu"><div class="sclbl">LLM Confidence</div><div class="scval">96%</div><div class="scsub">Across all playbooks</div></div>
+  </div>
+  <div class="grid g84">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot rd"></div><div class="phtitle">Active Playbook — THR-0091 Ransomware</div></div><span class="sev sevc">CRITICAL</span></div>
+      <div class="pnlbdy">
+        <div style="margin-bottom:12px">
+          <div class="dpkv"><div class="dpkey">Threat</div><div class="dpval">Ransomware Pre-Detonation (T1486)</div></div>
+          <div class="dpkv"><div class="dpkey">Host</div><div class="dpval">WORKSTATION-047</div></div>
+          <div class="dpkv"><div class="dpkey">Detection Score</div><div class="dpval" style="color:var(--red)">0.943</div></div>
+          <div class="dpkv"><div class="dpkey">LLM Model</div><div class="dpval">Ensemble + GPT-4o</div></div>
+          <div class="dpkv"><div class="dpkey">Generated</div><div class="dpval">14:32:09 · 4.1s inference</div></div>
+        </div>
+        <div class="llmbox">
+          <div class="llmhdr">⬡ AI-Generated Response Playbook</div>
+          <div class="llmstep"><div class="llmnum">1</div><div class="llmtxt"><strong>Network Isolation</strong> — Immediately isolate WORKSTATION-047 via agent kill-switch. Block all outbound traffic on ports 443, 80, 445. Applied autonomously at T+0.3s.</div></div>
+          <div class="llmstep"><div class="llmnum">2</div><div class="llmtxt"><strong>Process Termination</strong> — Identify and kill suspicious processes matching entropy signature: PID 4821 (svchost.exe clone), PID 7334 (conhost.exe). Terminate shadow copy deletion attempts.</div></div>
+          <div class="llmstep"><div class="llmnum">3</div><div class="llmtxt"><strong>Memory Snapshot</strong> — Capture live memory dump for forensic analysis. Preserve encryption key material if present in RAM before process termination. Upload to SOC vault.</div></div>
+          <div class="llmstep"><div class="llmnum">4</div><div class="llmtxt"><strong>Credential Rotation</strong> — Force password reset for all accounts active on WORKSTATION-047 in last 48h. Invalidate Kerberos TGTs. Notify Identity team.</div></div>
+          <div class="llmstep"><div class="llmnum">5</div><div class="llmtxt"><strong>Lateral Scan</strong> — Scan all hosts in 192.168.1.0/24 for matching IOC signatures. Flag any hosts with recent SMB connections from WORKSTATION-047.</div></div>
+          <div class="llmstep" style="margin:0"><div class="llmnum">6</div><div class="llmtxt"><strong>Post-Incident Report</strong> — Generate forensic timeline. Correlate with SIEM. Notify incident response team. Update threat intel feed with new IOCs.</div></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btns" onclick="alert('Playbook approved and executing...')">&#10003; Approve &amp; Execute</button>
+          <button class="btn btnd">Reject Playbook</button>
+          <button class="btn btng">Edit Steps</button>
+          <button class="btn btng">Export PDF</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Recent Playbooks</div></div></div>
+        <div class="feed">
+          <div class="fitem"><div class="fidot gn"></div><div class="fitime">14:30</div><div class="fibody"><div class="fititle">T1003 — Credential Dump</div><div class="fidet">Auto-resolved · WORKSTATION-011</div></div></div>
+          <div class="fitem"><div class="fidot gn"></div><div class="fitime">13:54</div><div class="fibody"><div class="fititle">T1068 — Priv Escalation</div><div class="fidet">Auto-resolved · SRV-AD-01</div></div></div>
+          <div class="fitem"><div class="fidot or"></div><div class="fitime">12:11</div><div class="fibody"><div class="fititle">T1071 — C2 Beacon</div><div class="fidet">Pending approval · WS-023</div></div></div>
+          <div class="fitem"><div class="fidot gn"></div><div class="fitime">11:42</div><div class="fibody"><div class="fititle">T1566 — Phishing</div><div class="fidet">Auto-resolved · MAIL-GW-01</div></div></div>
+          <div class="fitem"><div class="fidot gn"></div><div class="fitime">10:23</div><div class="fibody"><div class="fititle">T1190 — Exploit</div><div class="fidet">Auto-resolved · WEB-SRV-01</div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pnlhdr"><div class="phl"><div class="phdot gn"></div><div class="phtitle">Auto-Resolution Rate</div></div></div>
+        <div class="pnlbdy">
+          <div style="text-align:center;padding:10px 0"><div style="font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:var(--green)">87%</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Threats resolved without human input</div></div>
+          <div class="bmeter"><div class="bmlbl">Critical threats</div><div class="bmbw"><div class="bmfil" style="width:60%;background:var(--red)"></div></div><div class="bmval" style="color:var(--red)">60%</div></div>
+          <div class="bmeter"><div class="bmlbl">High threats</div><div class="bmbw"><div class="bmfil" style="width:78%;background:var(--orange)"></div></div><div class="bmval" style="color:var(--orange)">78%</div></div>
+          <div class="bmeter" style="border:none"><div class="bmlbl">Med/Low threats</div><div class="bmbw"><div class="bmfil" style="width:97%;background:var(--green)"></div></div><div class="bmval" style="color:var(--green)">97%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NETWORK MAP ===== -->
+<div class="page" id="page-network">
+  <div class="ph">
+    <div><div class="ptitle">⌬ Network Topology</div><div class="psub">Live network map — threat propagation visualization</div></div>
+    <div class="pact"><button class="btn btng bsm">Full Screen</button><button class="btn btnp bsm">Scan Network</button></div>
+  </div>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Network Topology — Live</div></div><div class="live-pill" style="font-size:9px"><div class="ldot"></div>LIVE</div></div>
+    <div class="netcanvas" id="netmap">
+      <svg class="netsvg" id="netsvg" width="100%" height="100%">
+        <line x1="50%" y1="50%" x2="20%" y2="20%" stroke="rgba(6,255,165,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="50%" y1="50%" x2="80%" y2="20%" stroke="rgba(255,140,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="50%" y1="50%" x2="15%" y2="72%" stroke="rgba(255,59,92,0.5)" stroke-width="2"/>
+        <line x1="50%" y1="50%" x2="85%" y2="72%" stroke="rgba(255,140,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="50%" y1="50%" x2="50%" y2="14%" stroke="rgba(6,255,165,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="50%" y1="50%" x2="50%" y2="86%" stroke="rgba(0,212,255,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="80%" y1="20%" x2="20%" y2="20%" stroke="rgba(255,59,92,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+      </svg>
+      <div class="netnode ncore" style="left:50%;top:50%"><div class="netcirc">🛡️</div><div class="netlbl">CORE-FW-01<br>Firewall</div></div>
+      <div class="netnode nsafe" style="left:20%;top:20%"><div class="netcirc">🖥️</div><div class="netlbl">SRV-AD-01<br>Safe</div></div>
+      <div class="netnode nwarn" style="left:80%;top:20%"><div class="netcirc">🗄️</div><div class="netlbl">SRV-DB-02<br>Warning</div></div>
+      <div class="netnode nthr" style="left:15%;top:72%"><div class="netcirc">💻</div><div class="netlbl">WS-047<br>CRITICAL</div></div>
+      <div class="netnode nwarn" style="left:85%;top:72%"><div class="netcirc">💻</div><div class="netlbl">WS-023<br>Warning</div></div>
+      <div class="netnode nsafe" style="left:50%;top:14%"><div class="netcirc">🌐</div><div class="netlbl">WEB-SRV-01<br>Safe</div></div>
+      <div class="netnode nedge" style="left:50%;top:86%"><div class="netcirc">📡</div><div class="netlbl">EDGE-03<br>Degraded</div></div>
+    </div>
+    <div style="padding:10px 15px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap">
+      <div class="mli"><div class="mlb" style="background:rgba(6,255,165,.3);border-radius:50%"></div><span style="font-size:10px;color:var(--text2)">Safe</span></div>
+      <div class="mli"><div class="mlb" style="background:rgba(255,140,66,.4);border-radius:50%"></div><span style="font-size:10px;color:var(--text2)">Warning</span></div>
+      <div class="mli"><div class="mlb" style="background:rgba(255,59,92,.5);border-radius:50%"></div><span style="font-size:10px;color:var(--text2)">Threat Active</span></div>
+      <div class="mli"><div class="mlb" style="background:rgba(0,212,255,.3);border-radius:50%"></div><span style="font-size:10px;color:var(--text2)">Edge/Degraded</span></div>
+      <div class="mli"><div class="mlb" style="background:rgba(168,85,247,.4);border-radius:50%"></div><span style="font-size:10px;color:var(--text2)">Core</span></div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot or"></div><div class="phtitle">Active Connections</div></div></div>
+      <table class="vtable"><thead><tr><th>Source</th><th>Destination</th><th>Protocol</th><th>Status</th><th>Risk</th></tr></thead><tbody>
+        <tr class="vtr"><td><div class="cm">WS-047</div></td><td><div class="cm">CORE-FW-01</div></td><td><span class="mtag">SMB</span></td><td><span class="st stiso"><span class="std"></span>Blocked</span></td><td><span class="sev sevc">CRITICAL</span></td></tr>
+        <tr class="vtr"><td><div class="cm">SRV-DB-02</div></td><td><div class="cm">SRV-AD-01</div></td><td><span class="mtag">SMB</span></td><td><span class="st stact"><span class="std"></span>Active</span></td><td><span class="sev sevh">HIGH</span></td></tr>
+        <tr class="vtr"><td><div class="cm">WS-023</div></td><td><div class="cm">ext:185.x.x.x</div></td><td><span class="mtag">HTTPS</span></td><td><span class="st stinv"><span class="std"></span>Monitored</span></td><td><span class="sev sevh">HIGH</span></td></tr>
+        <tr class="vtr"><td><div class="cm">WEB-SRV-01</div></td><td><div class="cm">CORE-FW-01</div></td><td><span class="mtag">HTTP</span></td><td><span class="st stonl"><span class="std"></span>Normal</span></td><td><span class="sev sevl">LOW</span></td></tr>
+      </tbody></table>
+    </div>
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot gn"></div><div class="phtitle">Bandwidth Monitor</div></div></div>
+      <div class="pnlbdy">
+        <div class="bmeter"><div class="bmlbl">WS-047 → CORE-FW-01</div><div class="bmbw"><div class="bmfil" style="width:0%;background:var(--text3)"></div></div><div class="bmval" style="color:var(--text3)">Blocked</div></div>
+        <div class="bmeter"><div class="bmlbl">SRV-DB-02 → SRV-AD-01</div><div class="bmbw"><div class="bmfil" style="width:87%;background:var(--orange)"></div></div><div class="bmval" style="color:var(--orange)">87 MB/s</div></div>
+        <div class="bmeter"><div class="bmlbl">WS-023 → Internet</div><div class="bmbw"><div class="bmfil" style="width:22%;background:var(--yellow)"></div></div><div class="bmval" style="color:var(--yellow)">22 KB/s</div></div>
+        <div class="bmeter"><div class="bmlbl">WEB-SRV-01 → FW</div><div class="bmbw"><div class="bmfil" style="width:44%;background:var(--cyan)"></div></div><div class="bmval" style="color:var(--cyan)">44 MB/s</div></div>
+        <div class="bmeter" style="border:none"><div class="bmlbl">EDGE-NODE-03</div><div class="bmbw"><div class="bmfil" style="width:12%;background:var(--text2)"></div></div><div class="bmval" style="color:var(--text2)">12 KB/s</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COMPLIANCE ===== -->
+<div class="page" id="page-compliance">
+  <div class="ph">
+    <div><div class="ptitle">◎ Compliance &amp; Posture</div><div class="psub">SOC 2, ISO 27001, NIST, PCI-DSS — continuous automated assessment</div></div>
+    <div class="pact"><button class="btn btng bsm">Download Report</button></div>
+  </div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="scard gn"><div class="sclbl">SOC 2 Type II</div><div class="scval">94%</div><div class="scsub">Last audit: 7 days ago</div></div>
+    <div class="scard cy"><div class="sclbl">ISO 27001</div><div class="scval">88%</div><div class="scsub">2 controls pending</div></div>
+    <div class="scard or"><div class="sclbl">NIST CSF</div><div class="scval">79%</div><div class="scsub">Respond: needs work</div></div>
+    <div class="scard rd"><div class="sclbl">PCI-DSS</div><div class="scval">71%</div><div class="scsub">3 critical findings</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Framework Compliance</div></div></div>
+      <div class="pnlbdy">
+        <div class="ccard" style="margin-bottom:8px"><div class="cctop"><div class="ccname">SOC 2 Type II</div><div class="ccpct" style="color:var(--green)">94%</div></div><div class="ccbw"><div class="ccb" style="width:94%;background:var(--green)"></div></div><div class="ccst">Security · Availability · Confidentiality · Processing Integrity · Privacy</div></div>
+        <div class="ccard" style="margin-bottom:8px"><div class="cctop"><div class="ccname">ISO 27001</div><div class="ccpct" style="color:var(--cyan)">88%</div></div><div class="ccbw"><div class="ccb" style="width:88%;background:var(--cyan)"></div></div><div class="ccst">114 controls · 2 open non-conformities</div></div>
+        <div class="ccard" style="margin-bottom:8px"><div class="cctop"><div class="ccname">NIST CSF 2.0</div><div class="ccpct" style="color:var(--orange)">79%</div></div><div class="ccbw"><div class="ccb" style="width:79%;background:var(--orange)"></div></div><div class="ccst">Identify 91% · Protect 88% · Detect 95% · Respond 62% · Recover 74%</div></div>
+        <div class="ccard"><div class="cctop"><div class="ccname">PCI-DSS v4.0</div><div class="ccpct" style="color:var(--red)">71%</div></div><div class="ccbw"><div class="ccb" style="width:71%;background:var(--red)"></div></div><div class="ccst">3 critical open findings · Next QSA audit in 23 days</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">MITRE ATT&amp;CK Full Coverage</div></div></div>
+      <div class="mitwrap">
+        <div class="mitrow"><div class="mittac">Reconnaissance</div><div class="mitcells"><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l1"></div></div></div>
+        <div class="mitrow"><div class="mittac">Resource Dev.</div><div class="mitcells"><div class="mc l0"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l0"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div><div class="mc l0"></div></div></div>
+        <div class="mitrow"><div class="mittac">Initial Access</div><div class="mitcells"><div class="mc l2"></div><div class="mc l1"></div><div class="mc l3"></div><div class="mc l0"></div><div class="mc l1"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div></div></div>
+        <div class="mitrow"><div class="mittac">Execution</div><div class="mitcells"><div class="mc l3"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l4"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div></div></div>
+        <div class="mitrow"><div class="mittac">Persistence</div><div class="mitcells"><div class="mc l1"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l3"></div><div class="mc l1"></div><div class="mc l2"></div><div class="mc l1"></div></div></div>
+        <div class="mitrow"><div class="mittac">Priv. Escalation</div><div class="mitcells"><div class="mc l2"></div><div class="mc l3"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l3"></div></div></div>
+        <div class="mitrow"><div class="mittac">Lateral Movement</div><div class="mitcells"><div class="mc l4"></div><div class="mc l3"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l3"></div><div class="mc l2"></div><div class="mc l1"></div></div></div>
+        <div class="mitrow"><div class="mittac">Collection</div><div class="mitcells"><div class="mc l1"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l1"></div></div></div>
+        <div class="mitrow" style="margin:0"><div class="mittac">Impact</div><div class="mitcells"><div class="mc l4"></div><div class="mc l3"></div><div class="mc l0"></div><div class="mc l1"></div><div class="mc l0"></div><div class="mc l2"></div><div class="mc l0"></div><div class="mc l1"></div></div></div>
+        <div class="mitleg"><div class="mli"><div class="mlb" style="background:var(--border)"></div>None</div><div class="mli"><div class="mlb" style="background:rgba(0,212,255,.22)"></div>Low</div><div class="mli"><div class="mlb" style="background:rgba(255,140,66,.35)"></div>Med</div><div class="mli"><div class="mlb" style="background:rgba(255,59,92,.5)"></div>High</div><div class="mli"><div class="mlb" style="background:var(--red)"></div>Critical</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AUDIT ===== -->
+<div class="page" id="page-audit">
+  <div class="ph">
+    <div><div class="ptitle">≡ Audit Log</div><div class="psub">Full tamper-evident audit trail — all agent and AI actions</div></div>
+    <div class="pact"><button class="btn btng bsm">Export Log</button></div>
+  </div>
+  <div class="panel">
+    <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">All Actions</div></div></div>
+    <table class="vtable"><thead><tr><th>Timestamp</th><th>Action</th><th>Agent / Source</th><th>Target</th><th>Outcome</th><th>Confidence</th></tr></thead><tbody>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:09</td><td><div class="cm">Network Isolation</div><div class="cs">Autonomous — T1486 detected</div></td><td><span class="mtag">AI-ENGINE</span></td><td><div class="cs">WORKSTATION-047</div></td><td><span class="alout alos">SUCCESS</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green)">99%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:32:07</td><td><div class="cm">Process Kill</div><div class="cs">PID 4821, PID 7334</div></td><td><span class="mtag">AGENT-047</span></td><td><div class="cs">WORKSTATION-047</div></td><td><span class="alout alos">SUCCESS</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green)">97%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:55</td><td><div class="cm">Threat Classification</div><div class="cs">Ensemble model scored T1486</div></td><td><span class="mtag">ML-ENSEMBLE</span></td><td><div class="cs">WORKSTATION-047</div></td><td><span class="alout alos">CLASSIFIED</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green)">94%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:41</td><td><div class="cm">Lateral Move Block</div><div class="cs">SMB T1021 blocked at FW</div></td><td><span class="mtag">FIREWALL</span></td><td><div class="cs">SRV-DB-02 → SRV-AD-01</div></td><td><span class="alout alow">PARTIAL</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--orange)">81%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:31:22</td><td><div class="cm">LLM Playbook Generated</div><div class="cs">T1071 C2 response · 6 steps</div></td><td><span class="mtag">LLM-ENGINE</span></td><td><div class="cs">WORKSTATION-023</div></td><td><span class="alout alos">GENERATED</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan)">96%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:30:58</td><td><div class="cm">Auto-Remediation</div><div class="cs">T1003 credential dump resolved</div></td><td><span class="mtag">AI-ENGINE</span></td><td><div class="cs">WORKSTATION-011</div></td><td><span class="alout alos">SUCCESS</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green)">89%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:30:44</td><td><div class="cm">Agent Registration</div><div class="cs">New endpoint enrolled</div></td><td><span class="mtag">AGENT-REG</span></td><td><div class="cs">EDGE-NODE-04</div></td><td><span class="alout alos">SUCCESS</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green)">100%</td></tr>
+      <tr class="vtr"><td style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">14:28:33</td><td><div class="cm">DNS Anomaly Flagged</div><div class="cs">T1568 tunneling pattern</div></td><td><span class="mtag">ISO-FOREST</span></td><td><div class="cs">EDGE-NODE-03</div></td><td><span class="alout alow">MONITORING</span></td><td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--yellow)">52%</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div class="page" id="page-settings">
+  <div class="ph">
+    <div><div class="ptitle">◇ Platform Settings</div><div class="psub">AI engine configuration, autonomy levels, notification rules</div></div>
+    <div class="pact"><button class="btn btng bsm">Reset Defaults</button><button class="btn btnp bsm">Save Changes</button></div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot cy"></div><div class="phtitle">Autonomy &amp; AI Settings</div></div></div>
+      <div class="pnlbdy">
+        <div class="srrow"><div><div class="srlbl">Autonomous Network Isolation</div><div class="srdsc">AI can isolate endpoints without human approval (score &gt; 0.9)</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+        <div class="srrow"><div><div class="srlbl">Auto-Process Termination</div><div class="srdsc">Kill malicious processes automatically on critical detections</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+        <div class="srrow"><div><div class="srlbl">LLM Playbook Generation</div><div class="srdsc">Use AI to generate response playbooks in real-time</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+        <div class="srrow"><div><div class="srlbl">Auto-Execute Playbooks</div><div class="srdsc">Execute AI playbooks without analyst review (High/Med threats)</div></div><label class="toggle"><input type="checkbox"><span class="tslider"></span></label></div>
+        <div class="srrow"><div><div class="srlbl">Behavioral Retraining</div><div class="srdsc">Continuously update behavioral models with new telemetry</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+        <div class="srrow" style="border:none"><div><div class="srlbl">Threat Intel Sharing</div><div class="srdsc">Share anonymized IOCs with the Vayuntra threat feed</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pnlhdr"><div class="phl"><div class="phdot pu"></div><div class="phtitle">Detection Thresholds</div></div></div>
+      <div class="pnlbdy">
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--text2)">Critical Isolation Threshold</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red)">0.90</span></div>
+          <input type="range" min="50" max="99" value="90" style="width:100%;accent-color:var(--red)">
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--text2)">High Alert Threshold</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--orange)">0.75</span></div>
+          <input type="range" min="50" max="99" value="75" style="width:100%;accent-color:var(--orange)">
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--text2)">Medium Alert Threshold</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--yellow)">0.55</span></div>
+          <input type="range" min="30" max="80" value="55" style="width:100%;accent-color:var(--yellow)">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--text2)">Behavioral Drift Sensitivity</span><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan)">0.30</span></div>
+          <input type="range" min="10" max="80" value="30" style="width:100%;accent-color:var(--cyan)">
+        </div>
+      </div>
+      <div class="pnlhdr" style="border-top:1px solid var(--border)"><div class="phl"><div class="phdot gn"></div><div class="phtitle">Platform Info</div></div></div>
+      <div class="pnlbdy">
+        <div class="dpkv"><div class="dpkey">Platform Version</div><div class="dpval">Vayuntra v0.1.0</div></div>
+        <div class="dpkv"><div class="dpkey">Agent Version</div><div class="dpval">v0.1.0-stable</div></div>
+        <div class="dpkv"><div class="dpkey">LLM Engine</div><div class="dpval">GPT-4o + Ensemble</div></div>
+        <div class="dpkv"><div class="dpkey">Last Model Update</div><div class="dpval">2025-03-08</div></div>
+        <div class="dpkv" style="border:none"><div class="dpkey">License</div><div class="dpval" style="color:var(--green)">Enterprise Active</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end content -->
+</div><!-- end main -->
+</div><!-- end shell -->
+
+<!-- ===== DRAWER OVERLAY ===== -->
+<div class="dover" id="drawer" onclick="cd(event)">
+  <div class="dpanel" id="dpanel" onclick="event.stopPropagation()">
+    <div class="dphdr">
+      <div><div class="dptit" id="dp-title">Detail Panel</div><div class="dpsub" id="dp-sub">—</div></div>
+      <button class="dpclose" onclick="cd()">✕</button>
+    </div>
+    <div class="dpbody" id="dp-body"></div>
+  </div>
+</div>
+
+<script>
+// ── Clock ──────────────────────────────────────────────────────────────────
+function tick(){
+  const n=new Date();
+  document.getElementById('clkEl').textContent=
+    n.toLocaleTimeString('en-GB',{hour12:false});
+}
+tick();setInterval(tick,1000);
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item,.sbitem').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-item,.sbitem').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))
+      b.classList.add('active');
+  });
+  if(id==='dashboard') buildChart();
+}
+
+// ── Bar Chart ─────────────────────────────────────────────────────────────
+function buildChart(){
+  const el=document.getElementById('dchart');
+  if(!el||el.children.length>0)return;
+  const hrs=['00','02','04','06','08','10','12','14','16','18','20','22'];
+  const vals=[3,1,2,4,8,12,9,15,19,31,24,47];
+  const mx=Math.max(...vals);
+  const cols=['var(--cyan)','var(--cyan)','var(--cyan)','var(--cyan)','var(--cyan)',
+    'var(--cyan)','var(--orange)','var(--orange)','var(--orange)',
+    'var(--red)','var(--red)','var(--red)'];
+  hrs.forEach((h,i)=>{
+    const w=document.createElement('div');w.className='cbw';
+    const b=document.createElement('div');b.className='cb';
+    b.style.height=Math.max(4,(vals[i]/mx*100))+'%';
+    b.style.background=cols[i];b.dataset.v=vals[i]+' events';
+    const l=document.createElement('div');l.className='cbl';l.textContent=h;
+    w.appendChild(b);w.appendChild(l);el.appendChild(w);
+  });
+}
+buildChart();
+
+// ── Live Feed ─────────────────────────────────────────────────────────────
+const feedEvents=[
+  {c:'rd',t:'Anomaly detected',d:'WORKSTATION-023 · Unusual outbound'},
+  {c:'cy',t:'ML model inference',d:'Ensemble · 0.2s · T1071 classified'},
+  {c:'gn',t:'Heartbeat received',d:'SRV-AD-01 · Score nominal'},
+  {c:'or',t:'Policy violation',d:'EDGE-NODE-03 · DNS query volume'},
+  {c:'cy',t:'Agent telemetry sync',d:'SRV-DB-02 · 1,204 events/s'},
+  {c:'gn',t:'Baseline updated',d:'WORKSTATION-011 · Model retrained'},
+  {c:'or',t:'Privilege check flagged',d:'SRV-AD-01 · T1068 low confidence'},
+];
+let fi=0;
+setInterval(()=>{
+  const feed=document.getElementById('dfeed');
+  if(!feed)return;
+  const ev=feedEvents[fi%feedEvents.length];fi++;
+  const now=new Date();
+  const ts=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const item=document.createElement('div');item.className='fitem';
+  item.style.animationDelay='0s';
+  item.innerHTML=`<div class="fidot ${ev.c}"></div><div class="fitime">${ts}</div><div class="fibody"><div class="fititle">${ev.t}</div><div class="fidet">${ev.d}</div></div>`;
+  feed.insertBefore(item,feed.firstChild);
+  if(feed.children.length>12)feed.removeChild(feed.lastChild);
+},4000);
+
+// ── Drawer ─────────────────────────────────────────────────────────────────
+const drawerData={
+  'thr-rw':{title:'THR-0091 — Ransomware Pre-Detonation',sub:'WORKSTATION-047 · CRITICAL · T1486',body:`
+    <div class="dpsec"><div class="dpsectit">Threat Intelligence</div>
+    <div class="dpkv"><div class="dpkey">Severity</div><div class="dpval" style="color:var(--red)">CRITICAL</div></div>
+    <div class="dpkv"><div class="dpkey">MITRE Technique</div><div class="dpval">T1486 — Data Encrypted for Impact</div></div>
+    <div class="dpkv"><div class="dpkey">Detection Score</div><div class="dpval" style="color:var(--red)">0.943</div></div>
+    <div class="dpkv"><div class="dpkey">Detection Model</div><div class="dpval">Ensemble (IF + SVM + LSTM)</div></div>
+    <div class="dpkv"><div class="dpkey">First Seen</div><div class="dpval">14:31:42</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--red)">Network Isolated</div></div>
+    </div>
+    <div class="dpsec"><div class="dpsectit">Key Indicators</div>
+    <div class="dpkv"><div class="dpkey">File write rate</div><div class="dpval" style="color:var(--red)">2,847 writes/min</div></div>
+    <div class="dpkv"><div class="dpkey">File entropy</div><div class="dpval" style="color:var(--red)">8.91 bits/byte</div></div>
+    <div class="dpkv"><div class="dpkey">VSS deletion</div><div class="dpval" style="color:var(--red)">DETECTED</div></div>
+    <div class="dpkv"><div class="dpkey">Suspicious PIDs</div><div class="dpval">4821, 7334</div></div>
+    </div>
+    <div class="dpsec"><div class="dpsectit">AI Actions Taken</div>
+    <div class="alog"><div class="alt">14:32:09</div><div class="alac">ISOLATE</div><div class="alan">Network isolation applied</div><div class="alout alos">SUCCESS</div></div>
+    <div class="alog"><div class="alt">14:32:07</div><div class="alac">KILL-PROC</div><div class="alan">PIDs 4821, 7334 terminated</div><div class="alout alos">SUCCESS</div></div>
+    <div class="alog"><div class="alt">14:32:06</div><div class="alac">PLAYBOOK</div><div class="alan">6-step response generated</div><div class="alout alos">READY</div></div>
+    </div>
+    <div class="dpact"><button class="btn btns bsm" onclick="nav('remediation');cd()">View Playbook</button><button class="btn btng bsm">Download Report</button></div>`},
+  'thr-lat':{title:'THR-0090 — Lateral Movement',sub:'SRV-DB-02 → SRV-AD-01 · HIGH · T1021',body:`
+    <div class="dpsec"><div class="dpsectit">Threat Details</div>
+    <div class="dpkv"><div class="dpkey">Severity</div><div class="dpval" style="color:var(--orange)">HIGH</div></div>
+    <div class="dpkv"><div class="dpkey">MITRE Technique</div><div class="dpval">T1021 — Remote Services</div></div>
+    <div class="dpkv"><div class="dpkey">Score</div><div class="dpval" style="color:var(--orange)">0.812</div></div>
+    <div class="dpkv"><div class="dpkey">Protocol</div><div class="dpval">SMB / Port 445</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--red)">Active</div></div>
+    </div>
+    <div class="dpact"><button class="btn btnd bsm" onclick="isoAction('SRV-DB-02');cd()">Isolate SRV-DB-02</button><button class="btn btng bsm">Add to Watchlist</button></div>`},
+  'thr-c2':{title:'THR-0089 — C2 Beacon Pattern',sub:'WORKSTATION-023 · HIGH · T1071',body:`
+    <div class="dpsec"><div class="dpsectit">C2 Analysis</div>
+    <div class="dpkv"><div class="dpkey">Beacon Interval</div><div class="dpval" style="color:var(--orange)">127s (±3s jitter)</div></div>
+    <div class="dpkv"><div class="dpkey">Remote IP</div><div class="dpval">185.234.xx.xx</div></div>
+    <div class="dpkv"><div class="dpkey">Protocol</div><div class="dpval">HTTPS / TLS 1.3</div></div>
+    <div class="dpkv"><div class="dpkey">Score</div><div class="dpval" style="color:var(--orange)">0.779</div></div>
+    </div>
+    <div class="dpact"><button class="btn btnd bsm">Block IP</button><button class="btn btng bsm" onclick="nav('remediation');cd()">AI Playbook</button></div>`},
+  'thr-cr':{title:'THR-0088 — Credential Dumping',sub:'WORKSTATION-011 · MEDIUM · T1003',body:`
+    <div class="dpsec"><div class="dpsectit">Details</div>
+    <div class="dpkv"><div class="dpkey">Technique</div><div class="dpval">T1003 — OS Credential Dumping</div></div>
+    <div class="dpkv"><div class="dpkey">Score</div><div class="dpval" style="color:var(--yellow)">0.641</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--green)">Contained</div></div>
+    </div>`},
+  'thr-dns':{title:'THR-0087 — DNS Tunneling',sub:'EDGE-NODE-03 · LOW · T1568',body:`
+    <div class="dpsec"><div class="dpsectit">Details</div>
+    <div class="dpkv"><div class="dpkey">Technique</div><div class="dpval">T1568 — Dynamic Resolution</div></div>
+    <div class="dpkv"><div class="dpkey">Score</div><div class="dpval" style="color:var(--cyan)">0.523</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--yellow)">Monitoring</div></div>
+    </div>`},
+  'ag-047':{title:'WORKSTATION-047',sub:'192.168.1.47 · Windows 11 Pro · ISOLATED',body:`
+    <div class="dpsec"><div class="dpsectit">Agent Info</div>
+    <div class="dpkv"><div class="dpkey">Hostname</div><div class="dpval">WORKSTATION-047</div></div>
+    <div class="dpkv"><div class="dpkey">IP Address</div><div class="dpval">192.168.1.47</div></div>
+    <div class="dpkv"><div class="dpkey">OS</div><div class="dpval">Windows 11 Pro 23H2</div></div>
+    <div class="dpkv"><div class="dpkey">Architecture</div><div class="dpval">x86_64</div></div>
+    <div class="dpkv"><div class="dpkey">Agent Version</div><div class="dpval">v0.1.0</div></div>
+    <div class="dpkv"><div class="dpkey">Risk Score</div><div class="dpval" style="color:var(--red)">94 / 100</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--red)">NETWORK ISOLATED</div></div>
+    </div>
+    <div class="dpact"><button class="btn btns bsm" onclick="relIso();cd()">Release Isolation</button><button class="btn btng bsm">View Timeline</button></div>`},
+  'ag-db':{title:'SRV-DB-02',sub:'10.0.1.12 · Ubuntu 22.04 LTS',body:`
+    <div class="dpsec"><div class="dpsectit">Agent Info</div>
+    <div class="dpkv"><div class="dpkey">Hostname</div><div class="dpval">SRV-DB-02</div></div>
+    <div class="dpkv"><div class="dpkey">IP</div><div class="dpval">10.0.1.12</div></div>
+    <div class="dpkv"><div class="dpkey">OS</div><div class="dpval">Ubuntu 22.04 LTS</div></div>
+    <div class="dpkv"><div class="dpkey">Risk Score</div><div class="dpval" style="color:var(--orange)">81 / 100</div></div>
+    <div class="dpkv"><div class="dpkey">Active Threat</div><div class="dpval" style="color:var(--orange)">T1021 — Lateral Movement</div></div>
+    </div>
+    <div class="dpact"><button class="btn btnd bsm" onclick="isoAction('SRV-DB-02');cd()">Isolate</button><button class="btn btng bsm">SSH Console</button></div>`},
+  'ag-023':{title:'WORKSTATION-023',sub:'192.168.1.23 · macOS Sonoma 14.4 · arm64 (M2)',body:`
+    <div class="dpsec"><div class="dpsectit">Agent Info</div>
+    <div class="dpkv"><div class="dpkey">Hostname</div><div class="dpval">WORKSTATION-023</div></div>
+    <div class="dpkv"><div class="dpkey">IP</div><div class="dpval">192.168.1.23</div></div>
+    <div class="dpkv"><div class="dpkey">OS</div><div class="dpval">macOS Sonoma 14.4</div></div>
+    <div class="dpkv"><div class="dpkey">Chip</div><div class="dpval">Apple M2</div></div>
+    <div class="dpkv"><div class="dpkey">Risk Score</div><div class="dpval" style="color:var(--orange)">78 / 100</div></div>
+    </div>`},
+  'ag-edge':{title:'EDGE-NODE-03',sub:'10.0.5.3 · Raspberry Pi OS · armv7',body:`
+    <div class="dpsec"><div class="dpsectit">Agent Info</div>
+    <div class="dpkv"><div class="dpkey">Hostname</div><div class="dpval">EDGE-NODE-03</div></div>
+    <div class="dpkv"><div class="dpkey">IP</div><div class="dpval">10.0.5.3</div></div>
+    <div class="dpkv"><div class="dpkey">OS</div><div class="dpval">Raspberry Pi OS (armv7)</div></div>
+    <div class="dpkv"><div class="dpkey">Status</div><div class="dpval" style="color:var(--orange)">Degraded</div></div>
+    <div class="dpkv"><div class="dpkey">Risk Score</div><div class="dpval" style="color:var(--yellow)">52 / 100</div></div>
+    </div>
+    <div class="dpact"><button class="btn btng bsm">Run Diagnostics</button><button class="btn btng bsm">Ping</button></div>`},
+};
+
+function od(id){
+  const d=drawerData[id];
+  if(!d)return;
+  document.getElementById('dp-title').textContent=d.title;
+  document.getElementById('dp-sub').textContent=d.sub;
+  document.getElementById('dp-body').innerHTML=d.body;
+  document.getElementById('drawer').classList.add('open');
+}
+function cd(e){
+  if(!e||e.target===document.getElementById('drawer'))
+    document.getElementById('drawer').classList.remove('open');
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────
+function isoAction(host){
+  const msg=document.createElement('div');
+  msg.style.cssText='position:fixed;top:70px;right:20px;background:rgba(255,59,92,.15);border:1px solid rgba(255,59,92,.4);color:var(--red);padding:10px 18px;border-radius:6px;font-family:Share Tech Mono,monospace;font-size:12px;z-index:400;animation:fdin .3s ease';
+  msg.textContent='ISOLATING '+host+' — Applying network kill-switch...';
+  document.body.appendChild(msg);
+  setTimeout(()=>msg.remove(),3500);
+}
+function relIso(){
+  const msg=document.createElement('div');
+  msg.style.cssText='position:fixed;top:70px;right:20px;background:rgba(6,255,165,.08);border:1px solid rgba(6,255,165,.3);color:var(--green);padding:10px 18px;border-radius:6px;font-family:Share Tech Mono,monospace;font-size:12px;z-index:400;animation:fdin .3s ease';
+  msg.textContent='RELEASING WORKSTATION-047 — Requires analyst confirmation';
+  document.body.appendChild(msg);
+  setTimeout(()=>msg.remove(),3500);
+}
+</script>
+</body>
+</html>

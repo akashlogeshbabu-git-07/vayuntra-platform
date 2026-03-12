@@ -1,0 +1,348 @@
+# ============================================================================
+# Vayuntra — CI/CD Pipeline
+# Full pipeline: lint → test → build → security scan → deploy
+# ============================================================================
+
+name: Vayuntra CI/CD
+
+on:
+  push:
+    branches: [main, develop, "release/**"]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: registry.vayuntra.io
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. Backend Lint + Test
+  # ────────────────────────────────────────────────────────────────────────────
+  backend-test:
+    name: Backend — Lint & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: vayuntra_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint with ruff
+        run: |
+          cd backend
+          ruff check app/ tests/
+          ruff format --check app/ tests/
+
+      - name: Type check with mypy
+        run: |
+          cd backend
+          mypy app/ --ignore-missing-imports
+
+      - name: Run unit tests
+        env:
+          APP_ENV: testing
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: vayuntra_test
+          DB_USER: postgres
+          DB_PASSWORD: test_password
+          DB_SSL_MODE: disable
+          REDIS_URL: redis://localhost:6379/0
+          REDIS_PASSWORD: ""
+          REDIS_SSL: "false"
+          JWT_SECRET_KEY: test-jwt-secret-key-for-ci
+          APP_SECRET_KEY: test-app-secret-key-for-ci
+          AGENT_SHARED_SECRET: test-agent-secret
+          TIMESCALE_HOST: localhost
+          TIMESCALE_USER: postgres
+          TIMESCALE_PASSWORD: test_password
+        run: |
+          cd backend
+          pytest tests/unit/ -v --cov=app --cov-report=xml --cov-fail-under=80
+
+      - name: Run integration tests
+        env:
+          APP_ENV: testing
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: vayuntra_test
+          DB_USER: postgres
+          DB_PASSWORD: test_password
+          DB_SSL_MODE: disable
+          REDIS_URL: redis://localhost:6379/0
+          REDIS_PASSWORD: ""
+          REDIS_SSL: "false"
+          JWT_SECRET_KEY: test-jwt-secret-key-for-ci
+          APP_SECRET_KEY: test-app-secret-key-for-ci
+          AGENT_SHARED_SECRET: test-agent-secret
+          TIMESCALE_HOST: localhost
+          TIMESCALE_USER: postgres
+          TIMESCALE_PASSWORD: test_password
+        run: |
+          cd backend
+          pytest tests/integration/ -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: backend/coverage.xml
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. Frontend Lint + Test + Build
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend-test:
+    name: Frontend — Lint, Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Lint
+        run: cd frontend && npm run lint
+
+      - name: Type check
+        run: cd frontend && npm run type-check
+
+      - name: Run tests
+        run: cd frontend && npm run test -- --coverage
+
+      - name: Build
+        run: cd frontend && npm run build
+        env:
+          VITE_API_URL: https://api.vayuntra.io
+          VITE_WS_URL: wss://control.vayuntra.io
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. ML Tests
+  # ────────────────────────────────────────────────────────────────────────────
+  ml-test:
+    name: ML — Test Pipelines
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install ML dependencies
+        run: |
+          cd ml
+          pip install -r requirements.txt
+
+      - name: Test anomaly detection
+        run: |
+          cd ml
+          pytest tests/ -v -k "not lstm"  # Skip LSTM in CI (requires TF)
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 4. Security Scanning
+  # ────────────────────────────────────────────────────────────────────────────
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scan (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Run Bandit (Python security)
+        run: |
+          pip install bandit
+          bandit -r backend/app/ -f json -o bandit-report.json -ll || true
+          cat bandit-report.json
+
+      - name: Check SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 5. Build & Push Docker Images
+  # ────────────────────────────────────────────────────────────────────────────
+  build-images:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test, ml-test, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    strategy:
+      matrix:
+        service: [backend, frontend, ml, llm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service == 'frontend' && 'frontend' || matrix.service == 'ml' && 'ml' || matrix.service == 'llm' && 'backend' || 'backend' }}
+          file: ${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/vayuntra-${{ matrix.service }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/vayuntra-${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+
+      - name: Scan built image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/vayuntra-${{ matrix.service }}:${{ env.IMAGE_TAG }}
+          severity: CRITICAL
+          exit-code: 1
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 6. Deploy to Staging
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.vayuntra.io
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to staging
+        run: |
+          cd infrastructure/kubernetes
+          kubectl set image deployment/vayuntra-backend \
+            backend=${{ env.REGISTRY }}/vayuntra-backend:${{ env.IMAGE_TAG }} \
+            -n vayuntra-staging
+          kubectl rollout status deployment/vayuntra-backend -n vayuntra-staging --timeout=5m
+
+      - name: Run smoke tests
+        run: |
+          ./scripts/deployment/smoke-test.sh https://staging-api.vayuntra.io
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 7. Deploy to Production
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://app.vayuntra.io
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.PROD_KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to production
+        run: |
+          kubectl set image deployment/vayuntra-backend \
+            backend=${{ env.REGISTRY }}/vayuntra-backend:${{ env.IMAGE_TAG }} \
+            -n vayuntra-prod
+          kubectl rollout status deployment/vayuntra-backend -n vayuntra-prod --timeout=10m
+
+      - name: Verify deployment health
+        run: |
+          ./scripts/deployment/verify-health.sh https://api.vayuntra.io
+
+      - name: Notify deployment
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Vayuntra Production Deployment: ${{ job.status }} — ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

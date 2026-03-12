@@ -1,0 +1,28 @@
+# Vayuntra Agent — Development Configuration
+# DO NOT USE IN PRODUCTION — replace all secrets with Vault-managed values
+
+agent_id: "dev-agent-001"
+tenant_id: "dev-tenant-001"
+control_plane_url: "wss://localhost:8000/ws/agent"
+shared_secret: "dev-shared-secret-change-in-production"
+mtls_cert_path: "/etc/vayuntra/certs/agent.crt"
+mtls_key_path: "/etc/vayuntra/certs/agent.key"
+ca_cert_path: "/etc/vayuntra/certs/ca.crt"
+
+# Collection settings
+heartbeat_interval: 30          # seconds
+telemetry_interval: 10          # seconds
+telemetry_batch_size: 50
+
+# Detection
+local_detection_enabled: true
+local_model_path: "/var/vayuntra/models/local_if_model.joblib"
+
+# Deployment type: workstation | edge_gateway | ot_gateway
+deployment_type: "workstation"
+
+# Logging
+log_level: "DEBUG"
+
+# Offline buffer
+offline_buffer_max_mb: 50

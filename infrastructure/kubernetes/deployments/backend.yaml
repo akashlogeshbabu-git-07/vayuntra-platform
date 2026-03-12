@@ -1,0 +1,438 @@
+# ============================================================================
+# Vayuntra — Kubernetes Deployment: Backend Control Plane
+# Namespace: vayuntra-prod
+# ============================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vayuntra-backend
+  namespace: vayuntra-prod
+  labels:
+    app: vayuntra-backend
+    version: "0.1.0"
+    component: control-plane
+    tier: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0     # Zero-downtime deployments
+  selector:
+    matchLabels:
+      app: vayuntra-backend
+  template:
+    metadata:
+      labels:
+        app: vayuntra-backend
+        version: "0.1.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: vayuntra-backend-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      # Anti-affinity: spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - vayuntra-backend
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: backend
+          image: registry.vayuntra.io/vayuntra-backend:0.1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vayuntra-db-secret
+                  key: password
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vayuntra-jwt-secret
+                  key: secret
+            - name: AGENT_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: vayuntra-agent-secret
+                  key: shared_secret
+          envFrom:
+            - configMapRef:
+                name: vayuntra-backend-config
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: certs
+          secret:
+            secretName: vayuntra-tls-certs
+      imagePullSecrets:
+        - name: registry-credentials
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vayuntra-backend
+  namespace: vayuntra-prod
+  labels:
+    app: vayuntra-backend
+spec:
+  selector:
+    app: vayuntra-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+  type: ClusterIP
+
+---
+# ============================================================================
+# ML Inference Service
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vayuntra-ml-service
+  namespace: vayuntra-prod
+  labels:
+    app: vayuntra-ml-service
+    component: ml-inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vayuntra-ml-service
+  template:
+    metadata:
+      labels:
+        app: vayuntra-ml-service
+    spec:
+      serviceAccountName: vayuntra-ml-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+        - name: ml-service
+          image: registry.vayuntra.io/vayuntra-ml:0.1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+              name: http
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "4000m"
+              memory: "8Gi"
+          env:
+            - name: MODEL_REGISTRY_PATH
+              value: "/models"
+          envFrom:
+            - configMapRef:
+                name: vayuntra-ml-config
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: vayuntra-model-pvc
+        - name: tmp-volume
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vayuntra-ml-service
+  namespace: vayuntra-prod
+spec:
+  selector:
+    app: vayuntra-ml-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+  type: ClusterIP
+
+---
+# ============================================================================
+# LLM Inference Service (Mistral 7B)
+# CPU-optimized deployment — GPU nodes optional
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vayuntra-llm-service
+  namespace: vayuntra-prod
+  labels:
+    app: vayuntra-llm-service
+    component: llm-inference
+spec:
+  replicas: 1              # Single replica — LLM is memory-intensive
+  selector:
+    matchLabels:
+      app: vayuntra-llm-service
+  template:
+    metadata:
+      labels:
+        app: vayuntra-llm-service
+    spec:
+      # Target nodes with sufficient RAM (16GB+ recommended for Mistral 7B Q4)
+      nodeSelector:
+        vayuntra/llm-capable: "true"
+      tolerations:
+        - key: "vayuntra/llm"
+          operator: "Exists"
+          effect: "NoSchedule"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1002
+      containers:
+        - name: llm-service
+          image: registry.vayuntra.io/vayuntra-llm:0.1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8002
+              name: http
+          resources:
+            requests:
+              cpu: "4000m"
+              memory: "12Gi"
+            limits:
+              cpu: "8000m"
+              memory: "16Gi"
+          env:
+            - name: LLM_MODEL_PATH
+              value: "/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+            - name: LLM_N_THREADS
+              value: "8"
+          volumeMounts:
+            - name: llm-model-storage
+              mountPath: /models
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: llm-model-storage
+          persistentVolumeClaim:
+            claimName: vayuntra-llm-model-pvc
+        - name: tmp-volume
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vayuntra-llm-service
+  namespace: vayuntra-prod
+spec:
+  selector:
+    app: vayuntra-llm-service
+  ports:
+    - port: 8002
+      targetPort: 8002
+  type: ClusterIP
+
+---
+# ============================================================================
+# Ingress (NGINX with mTLS for agent endpoints)
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vayuntra-ingress
+  namespace: vayuntra-prod
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    # mTLS for agent endpoints
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "vayuntra-prod/agent-ca-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.vayuntra.io
+        - control.vayuntra.io
+      secretName: vayuntra-tls
+  rules:
+    - host: api.vayuntra.io
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: vayuntra-backend
+                port:
+                  number: 80
+    - host: control.vayuntra.io
+      http:
+        paths:
+          - path: /ws/agent
+            pathType: Prefix
+            backend:
+              service:
+                name: vayuntra-backend
+                port:
+                  number: 80
+
+---
+# ============================================================================
+# Horizontal Pod Autoscaler
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vayuntra-backend-hpa
+  namespace: vayuntra-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vayuntra-backend
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# ============================================================================
+# Network Policy — Zero Trust inter-service
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vayuntra-backend-netpol
+  namespace: vayuntra-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: vayuntra-backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: vayuntra-backend
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: vayuntra-ml-service
+      ports:
+        - protocol: TCP
+          port: 8001
+    - to:
+        - podSelector:
+            matchLabels:
+              app: vayuntra-llm-service
+      ports:
+        - protocol: TCP
+          port: 8002
+    # Allow DB, Redis, Kafka (external via service CIDR)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 9092
+    # Allow DNS
+    - ports:
+        - protocol: UDP
+          port: 53

@@ -1,0 +1,101 @@
+# ============================================================================
+# Vayuntra — .gitignore
+# ============================================================================
+
+# Environment & Secrets — NEVER COMMIT
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+certs/
+secrets/
+vault-token
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Node / Frontend
+node_modules/
+dist/
+.next/
+.nuxt/
+frontend/dist/
+
+# ML Models (download separately — too large for Git)
+*.gguf
+*.joblib
+*.pkl
+*.h5
+*.pt
+*.pth
+ml/models/weights/
+ml/datasets/raw/
+ml/datasets/processed/
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Kubernetes secrets (use Vault/sealed-secrets instead)
+infrastructure/kubernetes/secrets/
+
+# Terraform state (use remote backend)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Logs
+*.log
+logs/
+
+# Testing artifacts
+test-results/
+playwright-report/
+
+# Build artifacts
+*.zip
+*.tar.gz
+sbom.spdx.json
+bandit-report.json
+trivy-results.sarif
+
+# Explicit .env protection (belt-and-suspenders)
+**/.env
+**/backend/.env
+**/frontend/.env
+*.env
+backend/.env
+**/__pycache__/
+**/*.pyc
+**/venv/
+**/.venv/
+backend/.env
+backend/venv/
+**/__pycache__/
+**/*.pyc
+*.egg-info/
+.DS_Store
