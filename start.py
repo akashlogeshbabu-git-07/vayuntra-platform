@@ -66,12 +66,15 @@ async def seed_if_needed():
         await conn.run_sync(ModelBase.metadata.create_all)
     print("✅ Database tables ready")
 
-    # Check if already seeded
+    # Check if threats are fully seeded (expect 30)
+    from app.db.models.models import Threat
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).limit(1))
-        if result.scalar_one_or_none():
-            print("✅ Demo data already exists — skipping seed")
+        result = await db.execute(select(Threat))
+        threat_count = len(result.scalars().all())
+        if threat_count >= 30:
+            print(f"✅ Demo data already exists ({threat_count} threats) — skipping seed")
             return
+        print(f"🌱 Only {threat_count} threats found — reseeding to 30...")
 
     # Run seed
     print("🌱 Seeding demo data...")
