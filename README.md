@@ -363,47 +363,49 @@ curl -s http://localhost:8000/api/v1/agents/ \
 
 ## 30 Pre-loaded Threats
 
+Threats span 6 real-world domains — proving Vayuntra works across every sector.
+
 ### 🔴 CRITICAL (10)
-| Threat | MITRE | Simulates |
-|---|---|---|
-| Ransomware Pre-Detonation | T1486 | LockBit encrypting 2000+ files |
-| C2 Beacon — Cobalt Strike | T1071 | Attacker C2 communication |
-| LSASS Dump — Mimikatz | T1003.001 | Domain credential harvesting |
-| Rootkit Kernel Injection | T1014 | Hidden process via DKOM |
-| Zero-Day Log4Shell RCE | T1190 | CVE-2021-44228 exploitation |
-| Supply Chain NPM Backdoor | T1195.002 | Trojanized package exfiltration |
-| PowerShell Empire Fileless | T1059.001 | In-memory attack, no disk writes |
-| Kerberoasting | T1558.003 | Service ticket offline cracking |
-| Golden Ticket Attack | T1550.003 | Forged Kerberos TGT |
-| WannaCry SMB Worm | T1210 | EternalBlue propagation |
+| Domain | Threat | MITRE | Simulates |
+|---|---|---|---|
+| 🏛️ GOV | Ransomware Pre-Detonation on Ministry of Defence Server | T1486 | LockBit encrypting 3000+ classified files |
+| 🏦 BANK | C2 Beacon on Core Banking SWIFT Payment System | T1071 | FIN7 Cobalt Strike beacon on payment server |
+| 🏥 HOSPITAL | Credential Dump on Patient Records Database Server | T1003.001 | Mimikatz — 50,000 patient records exposed |
+| 🏛️ GOV | Rootkit on Power Grid SCADA Control System | T1014 | DKOM hiding process — 2M citizens at risk |
+| 💻 IT | Log4Shell Zero-Day on DevOps CI/CD Pipeline | T1190 | CVE-2021-44228 on Jenkins server |
+| 💻 IT | Supply Chain Attack via Malicious NPM Package | T1195.002 | Trojanized package exfiltrating API keys |
+| 🏢 CORP | PowerShell Empire Fileless Attack on HR System | T1059.001 | In-memory attack — 8,000 employee records |
+| 🏢 CORP | Kerberoasting Attack on Corporate Active Directory | T1558.003 | Rubeus — service ticket offline cracking |
+| 🏛️ GOV | Golden Ticket Forged on Election Commission Database | T1550.003 | Forged Kerberos TGT — voter data at risk |
+| 🏥 HOSPITAL | WannaCry Worm Spreading Across ICU Network | T1210 | EternalBlue — 12 medical devices encrypted |
 
 ### 🟠 HIGH (10)
-| Threat | MITRE | Simulates |
-|---|---|---|
-| Lateral Movement Pass-the-Hash | T1021.002 | NTLM hash reuse via SMB |
-| Data Exfiltration 4.7GB | T1041 | Large outbound transfer |
-| Phishing Office Macro | T1566.001 | Emotet dropper via Word doc |
-| DLL Hollowing Explorer | T1055.012 | Code injection into explorer.exe |
-| DNS Tunneling C2 | T1048.001 | Covert channel via DNS |
-| WMI Abuse LOTL | T1047 | Fileless execution via wmic.exe |
-| Privilege Escalation Token | T1134.001 | SYSTEM via SeImpersonatePrivilege |
-| Cobalt Strike PSEXEC | T1569.002 | Lateral move to domain controller |
-| O365 Credential Stuffing | T1110.004 | 14,000 automated login attempts |
-| BEC CEO Impersonation | T1566.002 | Wire fraud via lookalike domain |
+| Domain | Threat | MITRE | Simulates |
+|---|---|---|---|
+| 🏦 BANK | Lateral Movement on SWIFT Interbank Payment Network | T1021.002 | Pass-the-Hash — ₹200 crore exposure |
+| 🏢 CORP | 4.7GB Customer PII Database Exfiltrated to Russia | T1041 | Aadhaar + transaction data exfiltrated |
+| 🏦 BANK | Spearphishing Email Targeting Finance Team | T1566.001 | Emotet dropper — RBI audit lure |
+| 💻 IT | DLL Hollowing on Security Operations Workstation | T1055.012 | Code injection — SOC tools compromised |
+| 🏛️ GOV | DNS Tunneling from Intelligence Agency Network | T1048.001 | Iodine — covert exfil bypassing firewall |
+| 🏢 CORP | WMI Abuse Living-off-the-Land on CEO Workstation | T1047 | Fileless — board strategy docs at risk |
+| 🏥 HOSPITAL | Privilege Escalation on MRI Machine Controller | T1134.001 | PrintSpoofer — SYSTEM on medical device |
+| 🏛️ GOV | Cobalt Strike Moving to Defence Ministry DC | T1569.002 | PSEXEC lateral move to domain controller |
+| 🏦 BANK | 14,000 Credential Stuffing on Online Banking Portal | T1110.004 | 3 accounts compromised — ₹85 lakh risk |
+| 🏦 BANK | BEC CEO Impersonation — ₹47 Lakh Wire Fraud | T1566.002 | Lookalike domain — finance team targeted |
 
 ### 🟡 MEDIUM (10)
-| Threat | MITRE | Simulates |
-|---|---|---|
-| Port Scan Reconnaissance | T1046 | Nmap full subnet scan |
-| SSH Brute Force 8400 | T1110.001 | Password spray from Romania |
-| Malicious Scheduled Task | T1053.005 | Persistence via task scheduler |
-| Registry Run Key | T1547.001 | Startup persistence via registry |
-| Off-Hours TOR Login | T1078 | Admin login from TOR exit node |
-| XMRig Cryptominer | T1496 | Monero miner on prod server |
-| USB Exfiltration 3.2GB | T1052.001 | Sensitive files to USB drive |
-| RDP Brute Force DC | T1110.003 | 5200 attempts on domain controller |
-| Cron Reverse Shell | T1053.003 | Bash reverse shell via cron |
-| Shadow IT Dropbox | T1567.002 | 14GB corp data to personal cloud |
+| Domain | Threat | MITRE | Simulates |
+|---|---|---|---|
+| 💻 IT | Internal Recon Port Scan Across Cloud Infrastructure | T1046 | Nmap — database ports probed |
+| 👤 PERSONAL | SSH Brute Force — 8,400 Attempts on Home Server | T1110.001 | Romanian IP — root account targeted |
+| 🏢 CORP | Malicious Scheduled Task on Payroll Server | T1053.005 | Encoded PowerShell every 5 min |
+| 👤 PERSONAL | Registry Run Key Persistence on Personal Laptop | T1547.001 | Fake AdobeUpdater — cracked software |
+| 🏛️ GOV | Off-Hours TOR Login to Income Tax Department Portal | T1078 | 2.3 lakh taxpayer records accessed |
+| 👤 PERSONAL | XMRig Cryptominer on Student Laptop — CPU 98% | T1496 | Monero miner — pirated software install |
+| 🏢 CORP | Insider Threat — 3.2GB Files Copied to USB | T1052.001 | Resigning employee — board docs stolen |
+| 🏥 HOSPITAL | RDP Brute Force on Hospital Administration System | T1110.003 | 5,200 attempts — billing system targeted |
+| 💻 IT | Cron Reverse Shell on Production Web Server | T1053.003 | Bash shell every 5 min — RCE precursor |
+| 👤 PERSONAL | Shadow IT — 14GB Corporate Files to Personal Dropbox | T1567.002 | WFH employee — source code + contacts |
 
 ---
 
