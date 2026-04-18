@@ -200,6 +200,25 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .ccst{font-size:10px;color:var(--text2)}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 @media(max-width:1100px){.g4{grid-template-columns:1fr 1fr}.g84,.g75{grid-template-columns:1fr}.sidebar{display:none}}
+
+#login-page{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9000;flex-direction:column;gap:32px}
+.login-box{background:var(--panel);border:1px solid var(--border2);border-radius:14px;padding:44px 48px;width:400px;max-width:95vw;box-shadow:0 0 60px rgba(0,212,255,0.07)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center}
+.login-hex{width:44px;height:44px;background:linear-gradient(135deg,var(--cyan),#0077aa);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;font-weight:bold;animation:hpulse 4s ease-in-out infinite}
+.login-title{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;letter-spacing:.1em;color:#fff}
+.login-sub{font-size:10px;color:var(--text3);letter-spacing:.2em;margin-top:2px}
+.lfield{margin-bottom:16px}
+.lfield label{display:block;font-size:10px;color:var(--text2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+.lfield input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .2s}
+.lfield input:focus{border-color:var(--cyan)}
+.lbtn{width:100%;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,119,170,0.1));border:1px solid rgba(0,212,255,0.3);color:var(--cyan);font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.1em;padding:12px;border-radius:6px;cursor:pointer;margin-top:8px;transition:all .2s}
+.lbtn:hover{background:rgba(0,212,255,0.2);border-color:var(--cyan)}
+.lbtn:disabled{opacity:0.5;cursor:not-allowed}
+.lerr{margin-top:10px;font-size:11px;color:var(--red);font-family:'Share Tech Mono',monospace;min-height:16px;text-align:center}
+.lhint{margin-top:14px;font-size:10px;color:var(--text3);text-align:center;font-family:'Share Tech Mono',monospace}
+.lhint span{color:var(--cyan)}
+.app-shell{display:none}
+
 </style>
 </head>
 <body>
@@ -859,5 +878,29 @@ function relIso(){
   setTimeout(()=>msg.remove(),3500);
 }
 </script>
+
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-hex">V</div>
+      <div>
+        <div class="login-title">VAYUNTRA</div>
+        <div class="login-sub">// AUTONOMOUS AI CYBER DEFENSE</div>
+      </div>
+    </div>
+    <div class="lfield">
+      <label>Email / Username</label>
+      <input type="email" id="login-email" value="admin@vayuntra.demo" placeholder="admin@vayuntra.demo" autocomplete="username">
+    </div>
+    <div class="lfield">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••••" autocomplete="current-password">
+    </div>
+    <button class="lbtn" id="login-btn" onclick="doLogin()">AUTHENTICATE →</button>
+    <div class="lerr" id="login-err"></div>
+    <div class="lhint">Demo: <span>admin@vayuntra.demo</span> / <span>Vayuntra@123</span></div>
+  </div>
+</div>
+
 </body>
 </html>
